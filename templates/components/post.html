@@ -1,1 +1,8 @@
-<>
+{% macro post(post) %}
+<div class="post">
+  <a href="{{ post.id }}">ID. {{post.id}}</a>
+  <img class="attachment" src="/storage/uploads/{{ post.attachment }}" />
+  <div class="user">{{ post.title }}</div>
+  <div class="post-body">{{ post.body }}</div>
+</div>
+{% endmacro %}
