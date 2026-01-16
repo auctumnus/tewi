@@ -1,0 +1,9 @@
+target/
+frontend/node_modules/
+frontend/dist/
+.git/
+.env
+.env.docker
+README.md
+docker-compose*.yml
+Dockerfile

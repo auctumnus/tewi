@@ -1,0 +1,9 @@
+<div class="post-form-container">
+  <form class="post-form" method="POST" action="{{ formRoute }}" enctype="multipart/form-data">
+    {{ csrfField() }}
+    <input type="text" name="title" />
+    <input type="file" name="attachment" />
+    <textarea name="body"></textarea>
+    <button type="submit">Submit</button>
+  </form>
+</div>

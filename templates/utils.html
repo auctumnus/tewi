@@ -1,0 +1,5 @@
+{% macro heading(required_arg, optional_arg = "default subtitle") %}
+    <h1>{{required_arg}}</h1>
+    <h2>{{optional_arg}}</h2>
+    {{ variable_in_scope }}
+{% endmacro %}s

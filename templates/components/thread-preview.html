@@ -1,0 +1,12 @@
+{% macro thread_preview(required_arg, optional_arg = "default subtitle") %}
+<div class="thread-preview">
+    <a href="{{ route('board_slug_thread.show', ['g', thread.id]) }}">ID. {{thread.id}}</a>
+    <img class="attachment" src="/storage/uploads/{{ thread.attachment }}" />
+    <div class="op-title">
+      {{ thread.title }}
+    </div>
+  <div class="post-body">
+    {{ thread.body }}
+  </div>
+</div>
+{% endmacro %}

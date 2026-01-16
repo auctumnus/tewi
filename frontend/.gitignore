@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Runtime
+.cache/
+.temp/
+
+# Coverage
+coverage/
+*.lcov
+
+# Environment variables
+.env
+.env.local
+.env.*.local
