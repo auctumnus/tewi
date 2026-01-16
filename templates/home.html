@@ -1,12 +1,24 @@
 {% extends "layout.html" %}
-
 {% block title %}tewi - Home{% endblock %}
-
 {% block head %}
 <script src="/static/home.js"></script>
 {% endblock %}
-
 {% block content %}
-<main>Hello world!</main>
+<main class="home">
+  <div class="board-index">
+    {% for category in categories %}
+    <div class="board-category">
+      <span>{{ category.name }}</span>
+      <hr />
+      <ol>
+        {% for board in category.boards %}
+        <li class="board-list-entry">
+          <a href="/board/{{ board.name }}">{{ board.name }}</a>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% endfor %}
+  </div>
+</main>
 {% endblock %}
-

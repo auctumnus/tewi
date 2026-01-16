@@ -1,0 +1,16 @@
+.post-form-container {
+  margin: auto;
+  max-width: 640px;
+}
+
+.post-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-normal);
+  border: 1px solid var(--gray);
+}
+
+.post-form textarea {
+  max-width: 100%;
+  resize: vertical;
+}

@@ -1,8 +1,0 @@
-{% macro thread_preview(thread) %}
-<div class="thread-preview">
-  <a href="{{ thread.id }}">ID. {{thread.id}}</a>
-  <img class="attachment" src="/storage/uploads/{{ thread.attachment }}" />
-  <div class="op-title">{{ thread.title }}</div>
-  <div class="post-body">{{ thread.body }}</div>
-</div>
-{% endmacro %}

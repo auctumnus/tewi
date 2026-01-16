@@ -1,3 +1,92 @@
-body {
-  margin: 0;
+@import url(pre-flight.css);
+@import url(page-transition.css);
+@import url(thread.css);
+@import url(post-form.css);
+
+.header {
+  padding: var(--spacing-normal) var(--spacing-large);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+main.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.board-index {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-3xl);
+  border: 1px solid var(--gray);
+  padding: var(--spacing-extra-large) var(--spacing-2xl);
+  width: 100%;
+  max-width: 640px;
+}
+
+.board-category {
+}
+
+.board-category span {
+  font-size: var(--font-size-sub-title);
+}
+
+main.page {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.page-threads {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3xl);
+  width: 100%;
+  max-width: 1920px;
+}
+
+.thread-preview hr {
+  margin-top: var(--spacing-2xl);
+}
+
+.thread {
+  display: flex;
+  gap: var(--spacing-large);
+}
+
+.thread-posts > div {
+  margin-top: var(--spacing-normal);
+}
+
+.attachment-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-normal);
+}
+
+.attachment-container > span {
+  font-size: var(--font-size-caption);
+}
+
+.post {
+  display: flex;
+  gap: var(--spacing-small);
+  background-color: var(--bg-secondary);
+}
+
+.post-header {
+  display: flex;
+  gap: var(--spacing-small);
+}
+
+.trip-name,
+.post-title,
+.post-number {
+  font-size: var(--font-size-caption);
 }

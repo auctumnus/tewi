@@ -1,16 +1,18 @@
 # Build stage
-FROM rust:1.88-slim as builder
+FROM rust:1.88-slim AS builder
 
 # Install system dependencies for building
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     curl \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:${PATH}"
+ENV DATABASE_URL="postgres://user:password@localhost:5432/tewi"
 
 WORKDIR /app
 

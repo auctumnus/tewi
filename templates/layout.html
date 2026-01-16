@@ -1,19 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}tewi{% endblock %}</title>
-    <link rel="stylesheet" href="/static/main.css">
-    {% block head %}{% endblock %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}tewi{% endblock %}</title>
+  <link rel="stylesheet" href="/static/main.css" />
+  {% block head %}{% endblock %}
 </head>
+
 <body>
+  <div class="header">
     <nav>
-        <a href="/">Home</a>
+      <a href="/">Home</a>
     </nav>
-    
+    <div class="content-hat">
+      {% block content_hat %}{% endblock %}
+    </div>
+  </div>
+
+  <div class="content">
     {% block content %}{% endblock %}
-    
-    {% block scripts %}{% endblock %}
+  </div>
+
+  <!-- load last scripts -->
+  {% block scripts %}{% endblock %}
 </body>
+
 </html>

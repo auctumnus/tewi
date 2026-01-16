@@ -1,0 +1,39 @@
+{% import "components/post.html" as post_macro %}
+{% macro thread_preview(thread_info) %}
+<div class="thread-preview">
+  <div class="thread">
+    <div class="attachment-container">
+      <img class="attachment" src="" width="140" height="160" />
+      <span>filename.jpeg</span>
+    </div>
+    <div class="thread-posts">
+      <div>
+        <span class="trip-name">{{ thread_info.op_post.name }}</span>
+        <a class="post-number" href="{{ thread_info.op_post.post_number }}">ID.
+          {{thread_info.op_post.post_number}}</a>
+        <div class="op-title">{{ thread_info.op_post.title }}</div>
+        <div class="post-body">
+          {{ thread_info.op_post.content | linebreaks }}
+        </div>
+      </div>
+      {% for post in thread_info.posts %}
+      <div class="post">
+        <div class="attachment-container">
+          <img class="attachment" src="" width="140" height="160" />
+          <span>filename.jpeg</span>
+        </div>
+        <div>
+          <div class="post-header">
+            <span class="trip-name">{{ post.name }}</span>
+            <a class="post-number" href="{{ post.post_number }}">ID. {{post.post_number}}</a>
+            <span class="op-title">{{post.title }}</span>
+          </div>
+          <div class="post-body">{{ post.content | linebreaks }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <hr />
+</div>
+{% endmacro %}

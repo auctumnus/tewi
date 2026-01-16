@@ -1,0 +1,53 @@
+:root {
+  view-transition-name: root;
+
+  --spacing-extra-small: 2px;
+  --spacing-small: 4px;
+  --spacing-normal: 8px;
+  --spacing-large: 12px;
+  --spacing-extra-large: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 46px;
+  --spacing-4xl: 64px;
+
+  --gray-light: rgba(0, 0, 0, 0.05);
+  --gray: rgba(0, 0, 0, 0.6);
+  --gray-dark: rgba(0, 0, 0, 0.85);
+  --orange-light: rgb(239, 209, 157);
+
+  --bg-primary: var(--orange-light);
+  --bg-secondary: var(--gray-light);
+  --text-primary: var(--gray);
+
+  --font-sans: "SF Pro Text", sans-serif;
+
+  --font-size-caption: 1rem;
+  --font-size-text: 1.3rem;
+  --font-size-sub-title: 2.2rem;
+}
+
+html {
+  font-size: 16px;
+}
+
+html > * {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-text);
+  color: var(--text-primary);
+}
+
+body {
+  margin: 0;
+  width: 100vw;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+hr {
+  background: rgba(0, 0, 0, 0.6);
+  border: 0;
+  height: 1px;
+  display: block;
+  margin-top: 0rem;
+  margin-bottom: 0.5rem;
+}
