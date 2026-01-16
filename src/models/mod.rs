@@ -1,1 +1,8 @@
+pub mod admins;
+pub mod attachments;
+pub mod bans;
+pub mod board_categories;
+pub mod boards;
+pub mod ips;
 pub mod posts;
+pub mod threads;

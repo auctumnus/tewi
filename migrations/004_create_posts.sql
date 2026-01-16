@@ -1,23 +1,19 @@
 -- stored as:
--- ${THUMBNAILS,ATTACHMENTS}_FOLDER/xx/yyyy-yyyyy....
+-- $ATTACHMENTS_FOLDER/xx/yyyy-yyyyy....
 -- where xx are the first two hex digits of the UUID,
 -- and yyyyy... is the full uuid
-create table thumbnails (
-    id UUID PRIMARY KEY DEFAULT uuidv7(),
-    mime_type VARCHAR NOT NULL,
-    size INT NOT NULL, -- in bytes
-    width INT NOT NULL,
-    height INT NOT NULL
-);
-
+-- thumbnails are stored similarly in $THUMBNAILS_FOLDER
 create table attachments (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
     mime_type VARCHAR NOT NULL,
     size INT NOT NULL, -- in bytes
     width INT,  -- null if not an image
     height INT, -- null if not an image
+
+    thumbnail_width INT,  -- null if no thumbnail
+    thumbnail_height INT, -- null if no thumbnail
+
     original_filename VARCHAR NOT NULL,
-    thumbnail_id UUID REFERENCES thumbnails(id) ON DELETE SET NULL,
     spoilered BOOLEAN NOT NULL DEFAULT FALSE
 );
 
