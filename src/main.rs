@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, State},
     http::{Error, StatusCode},
     response::{ErrorResponse, Html, Redirect},
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
@@ -22,10 +22,12 @@ use crate::{
 
 mod auth;
 mod config;
+mod controllers;
 mod err;
 mod extract_session;
 mod models;
 mod pagination;
+mod view_structs;
 
 #[derive(Template)]
 #[template(path = "home.html")]
@@ -95,16 +97,32 @@ async fn main() -> Result<(), AppError> {
         }
     }
 }
-
 fn create_router(state: AppState) -> Router {
     Router::new()
         .route("/", get(home))
-        .route("/admin", get(home))
-        .route("/admin", post(home))
-        .route("/admin/boards", get(home))
-        .route("/admin/boards", post(home))
-        .route("/admin/boards/{slug}", get(home))
-        .route("/admin/boards/{slug}", post(home))
+        .route("/admin", get(controllers::admin::login_page))
+        .route("/admin", post(controllers::admin::login))
+        .route("/admin/boards", get(controllers::admin::boards))
+        .route(
+            "/admin/boards/create",
+            get(controllers::admin::display_create_board),
+        )
+        .route(
+            "/admin/boards/create",
+            post(controllers::admin::create_board),
+        )
+        .route(
+            "/admin/boards/board/{slug}",
+            get(controllers::admin::view_board),
+        )
+        .route(
+            "/admin/boards/board/{slug}",
+            post(controllers::admin::update_board),
+        )
+        .route(
+            "/admin/boards/board/{slug}",
+            delete(controllers::admin::delete_board),
+        )
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
         .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))

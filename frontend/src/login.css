@@ -1,0 +1,9 @@
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-normal);
+}
+
+.login-button {
+  margin-top: var(--spacing-2xl);
+}

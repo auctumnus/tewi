@@ -5,20 +5,23 @@
 {% endblock %}
 {% block content %}
 <main class="home">
-  <div class="board-index">
-    {% for category in categories %}
-    <div class="board-category">
-      <span>{{ category.name }}</span>
-      <hr />
-      <ol>
-        {% for board in category.boards %}
-        <li class="board-list-entry">
-          <a href="/board/{{ board.name }}">{{ board.name }}</a>
-        </li>
-        {% endfor %}
-      </ol>
+  <div class="container-info board-index">
+    {% if let Some(error) = validation %}
+    <div class="login-error">
+      <span class="login-error-text">{{ error.message }}</span>
     </div>
-    {% endfor %}
+    {% endif %}
+    <form class="login-form" method="post">
+      <div class="input-group horizontal">
+        <label for="username-input">Username</label>
+        <input type="text" id="username-input" name="username" />
+      </div>
+      <div class="input-group horizontal">
+        <label for="password-input">Password</label>
+        <input type="password" id="password-input" name="password" />
+      </div>
+      <button type="submit" class="login-button">Login</button>
+    </form>
   </div>
 </main>
 {% endblock %}

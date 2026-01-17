@@ -1,0 +1,26 @@
+.post {
+  display: flex;
+  gap: var(--spacing-small);
+  background-color: var(--bg-secondary);
+}
+
+.post-header {
+  display: flex;
+  gap: var(--spacing-small);
+}
+
+.trip-name,
+.post-title,
+.post-number {
+  font-size: var(--font-size-caption);
+}
+
+.attachment-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-normal);
+}
+
+.attachment-container > span {
+  font-size: var(--font-size-caption);
+}

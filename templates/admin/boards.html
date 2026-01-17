@@ -5,20 +5,12 @@
 {% endblock %}
 {% block content %}
 <main class="home">
-  <div class="board-index">
-    {% for category in categories %}
-    <div class="board-category">
-      <span>{{ category.name }}</span>
-      <hr />
-      <ol>
-        {% for board in category.boards %}
-        <li class="board-list-entry">
-          <a href="/board/{{ board.name }}">{{ board.name }}</a>
-        </li>
-        {% endfor %}
-      </ol>
+  <div class="container-info board-index">
+    {% if let Some(error) = validation %}
+    <div class="quick-action-error">
+      <span class="quick-action-error-text">{{ error.message }}</span>
     </div>
-    {% endfor %}
+    {% endif %}
   </div>
 </main>
 {% endblock %}
