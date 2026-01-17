@@ -1,11 +1,12 @@
 use askama::Template;
 use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::{Html, Redirect},
-    routing::{get, post},
     Form, Json, Router,
+    extract::{Path, State},
+    http::{Error, StatusCode},
+    response::{ErrorResponse, Html, Redirect},
+    routing::{get, post},
 };
+use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::{net::SocketAddr, str::FromStr};
@@ -13,18 +14,24 @@ use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::{config::CliAction, err::AppError};
+use crate::{
+    config::CliAction,
+    err::AppError,
+    models::board_categories::{BoardCategory, BoardCategoryRepository},
+};
 
-mod models;
-mod err;
 mod auth;
-mod pagination;
-mod extract_session;
 mod config;
+mod err;
+mod extract_session;
+mod models;
+mod pagination;
 
 #[derive(Template)]
 #[template(path = "home.html")]
-struct HomeTemplate {}
+struct HomeTemplate {
+    categories: Vec<BoardCategory>,
+}
 
 /// Shared connections, config, etc.
 /// Should be cheap to clone.
@@ -47,14 +54,12 @@ async fn main() -> Result<(), AppError> {
 
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://user:password@localhost/tewi".to_string());
-    
+
     let pool = PgPool::connect(&database_url).await?;
-    
+
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let state = AppState {
-        db: pool
-    };
+    let state = AppState { db: pool };
 
     match cli.action.unwrap_or(CliAction::Serve) {
         CliAction::Serve => {
@@ -94,16 +99,30 @@ async fn main() -> Result<(), AppError> {
 fn create_router(state: AppState) -> Router {
     Router::new()
         .route("/", get(home))
+        .route("/admin", get(home))
+        .route("/admin", post(home))
+        .route("/admin/boards", get(home))
+        .route("/admin/boards", post(home))
+        .route("/admin/boards/{slug}", get(home))
+        .route("/admin/boards/{slug}", post(home))
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
-        .layer(
-            ServiceBuilder::new()
-                .layer(CorsLayer::permissive())
-        )
+        .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
         .with_state(state)
 }
 
 async fn home(State(s): State<AppState>) -> Result<Html<String>, StatusCode> {
-    let html = (HomeTemplate {}).render().map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Ok(Html(html))
+    let category_repo = BoardCategoryRepository::new(&s);
+    let categories_results = category_repo.list_all().await;
+    return match categories_results {
+        Ok(categories) => {
+            let html = (HomeTemplate { categories })
+                .render()
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            Ok(Html(html))
+        }
+        Err(_) => {
+            panic!("lets die")
+        }
+    };
 }
