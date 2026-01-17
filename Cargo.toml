@@ -19,3 +19,5 @@ uuid = { version = "1.17.0", features = ["v4", "serde"] }
 askama = "0.14.0"
 argon2 = "0.5.3"
 serde_urlencoded = "0.7.1"
+clap = { version = "4.5.54", features = ["derive"] }
+axum-extra = { version = "0.12.5", features = ["cookie"] }

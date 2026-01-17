@@ -5,6 +5,7 @@ use crate::{AppState, err::AppResult};
 #[derive(sqlx::FromRow)]
 pub struct DBAttachment {
     pub id: Uuid,
+    pub post_id: Uuid,
     pub mime_type: String,
     pub size: i32,
     pub width: Option<i32>,
@@ -17,6 +18,7 @@ pub struct DBAttachment {
 
 pub struct Attachment {
     pub id: Uuid,
+    pub post_id: Uuid,
     pub mime_type: String,
     pub size: i32,
     pub dimensions: Option<(i32, i32)>,
@@ -37,6 +39,7 @@ impl From<DBAttachment> for Attachment {
         };
         Attachment {
             id: db_attachment.id,
+            post_id: db_attachment.post_id,
             mime_type: db_attachment.mime_type,
             size: db_attachment.size,
             dimensions,
@@ -54,15 +57,15 @@ impl AttachmentRepository {
         Self(state.clone())
     }
 
-    pub async fn find_by_id(&self, attachment_id: Uuid) -> AppResult<Attachment> {
+    pub async fn find_by_post_id(&self, post_id: Uuid) -> AppResult<Vec<Attachment>> {
         sqlx::query_as!(
             DBAttachment,
-            "SELECT * FROM attachments WHERE id = $1",
-            attachment_id
+            "SELECT * FROM attachments WHERE post_id = $1",
+            post_id
         )
-        .fetch_one(&self.0.db)
+        .fetch_all(&self.0.db)
         .await
-        .map(Attachment::from)
+        .map(|db_attachments| db_attachments.into_iter().map(Attachment::from).collect())
         .map_err(Into::into)
     }
 }

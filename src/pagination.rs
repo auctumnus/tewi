@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::AppState;
 
-type PaginationSize = i32;
+type PaginationSize = i64;
 
 const MAX_PAGE_SIZE: PaginationSize = 100;
 
@@ -22,10 +22,10 @@ pub struct PaginatedResponse<T> {
 
 impl<T> PaginatedResponse<T> {
     pub fn request_last_page(&self) -> PaginatedRequest {
-        let last_offset = if self.total % i64::from(self.limit) == 0 {
-            self.total - i64::from(self.limit)
+        let last_offset = if self.total % self.limit == 0 {
+            self.total - self.limit
         } else {
-            self.total - (self.total % i64::from(self.limit))
+            self.total - (self.total % self.limit)
         };
         PaginatedRequest {
             limit: self.limit,
@@ -33,11 +33,11 @@ impl<T> PaginatedResponse<T> {
         }
     }
 
-    pub fn total_pages(&self) -> i32 {
-        ((self.total + i64::from(self.limit) - 1) / i64::from(self.limit)).try_into().unwrap_or(0)
+    pub fn total_pages(&self) -> PaginationSize {
+        ((self.total + self.limit - 1) / self.limit).try_into().unwrap_or(0)
     }
 
-    pub fn current_page(&self) -> i32 {
+    pub fn current_page(&self) -> PaginationSize {
         (self.offset / self.limit) + 1
     }
 

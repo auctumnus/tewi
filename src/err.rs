@@ -6,10 +6,36 @@ pub struct AppError {
     pub status_code: StatusCode,
 }
 
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (status: {})", self.message, self.status_code)
+    }
+}
+
+impl std::error::Error for AppError {}
+
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
         AppError {
             message: format!("Database error: {}", err),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
+impl From<sqlx::migrate::MigrateError> for AppError {
+    fn from(err: sqlx::migrate::MigrateError) -> Self {
+        AppError {
+            message: format!("Migration error: {}", err),
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
+impl From<std::io::Error> for AppError {
+    fn from(err: std::io::Error) -> Self {
+        AppError {
+            message: format!("IO error: {}", err),
             status_code: StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
@@ -27,5 +53,26 @@ pub fn internal_error(message: &str) -> AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         (self.status_code, self.message).into_response()
+    }
+}
+
+pub fn unauthorized(message: &str) -> AppError {
+    AppError {
+        message: message.to_string(),
+        status_code: StatusCode::UNAUTHORIZED,
+    }
+}
+
+pub fn banned(reason: &str) -> AppError {
+    AppError {
+        message: format!("IP address is banned: {}", reason),
+        status_code: StatusCode::FORBIDDEN,
+    }
+}
+
+pub fn invalid_credentials() -> AppError {
+    AppError {
+        message: "Invalid credentials".to_string(),
+        status_code: StatusCode::UNAUTHORIZED,
     }
 }

@@ -8,15 +8,19 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, str::FromStr};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use clap::{Parser, Subcommand};
+
+use crate::err::AppError;
 
 mod models;
 mod err;
 mod auth;
 mod pagination;
+mod extract_session;
 
 #[derive(Template)]
 #[template(path = "home.html")]
@@ -28,9 +32,41 @@ struct HomeTemplate {}
 pub struct AppState {
     db: PgPool,
 }
+#[derive(Debug, Clone, Subcommand)]
+enum CliAction {
+    /// Start the web server
+    Serve,
+    /// Create a new admin user
+    NewAdmin {
+        #[arg(long)]
+        name: String,
+
+        #[arg(long)]
+        password: String,
+    },
+    /// Delete an admin user
+    DeleteAdmin {
+        #[arg(long)]
+        name: String,
+    },
+    /// Clean up the database
+    Clean,
+}
+
+#[derive(Parser, Debug, Clone)]
+#[command(name = "tewi", about = "A web application")]
+struct Cli {
+    #[command(subcommand)]
+    action: Option<CliAction>,
+
+    #[arg(short, long, default_value = "3000", global = true)]
+    port: u16,
+}
 
 #[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
+async fn main() -> Result<(), AppError> {
+    let cli = Cli::parse();
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -49,16 +85,40 @@ async fn main() -> Result<(), anyhow::Error> {
     let state = AppState {
         db: pool
     };
-    
-    let app = create_router(state.clone());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    tracing::debug!("listening on {}", addr);
-    
-    let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app).await?;
+    match cli.action.unwrap_or(CliAction::Serve) {
+        CliAction::Serve => {
+            let addr = SocketAddr::from(([127, 0, 0, 1], cli.port));
+            let app = create_router(state.clone());
 
-    Ok(())
+            tracing::debug!("listening on {}", addr);
+
+            let listener = tokio::net::TcpListener::bind(addr).await?;
+            axum::serve(listener, app).await?;
+
+            Ok(())
+        }
+        CliAction::NewAdmin { name, password } => {
+            let repo = models::admins::AdminRepository::new(&state);
+            let admin = repo.create(&name, &password).await?;
+            println!("Created admin: {:?}", admin);
+            Ok(())
+        }
+        CliAction::DeleteAdmin { name } => {
+            let repo = models::admins::AdminRepository::new(&state);
+            repo.delete_by_name(&name).await?;
+            println!("Deleted admin: {}", name);
+            Ok(())
+        }
+        CliAction::Clean => {
+            println!("Clearing expired sessions...");
+            let sessions = models::sessions::SessionRepository::new(&state);
+            sessions.delete_expired().await?;
+
+            println!("Cleaned up the database");
+            Ok(())
+        }
+    }
 }
 
 fn create_router(state: AppState) -> Router {

@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::{AppState, err::AppResult};
+use crate::{AppState, auth::hash, err::AppResult};
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct Admin {
     pub id: Uuid,
     pub name: String,
@@ -38,5 +38,28 @@ impl AdminRepository {
         .fetch_one(&self.0.db)
         .await
         .map_err(Into::into)
+    }
+    
+    pub async fn create(&self, name: &str, password: &str) -> AppResult<Admin> {
+        let password_hash = hash(password)?;
+        let admin = sqlx::query_as!(
+            Admin,
+            "INSERT INTO admins (name, password_hash) VALUES ($1, $2) RETURNING *",
+            name,
+            password_hash
+        )
+        .fetch_one(&self.0.db)
+        .await?;
+        Ok(admin)
+    }
+
+    pub async fn delete_by_name(&self, name: &str) -> AppResult<()> {
+        sqlx::query!(
+            "DELETE FROM admins WHERE name = $1",
+            name
+        )
+        .execute(&self.0.db)
+        .await?;
+        Ok(())
     }
 }

@@ -5,4 +5,5 @@ pub mod board_categories;
 pub mod boards;
 pub mod ips;
 pub mod posts;
+pub mod sessions;
 pub mod threads;
