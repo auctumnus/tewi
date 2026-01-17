@@ -41,6 +41,15 @@ impl From<std::io::Error> for AppError {
     }
 }
 
+impl From<image::ImageError> for AppError {
+    fn from(err: image::ImageError) -> Self {
+        AppError {
+            message: format!("Image error: {}", err),
+            status_code: StatusCode::BAD_REQUEST,
+        }
+    }
+}
+
 pub type AppResult<T> = Result<T, AppError>;
 
 pub fn internal_error(message: &str) -> AppError {
@@ -74,5 +83,12 @@ pub fn invalid_credentials() -> AppError {
     AppError {
         message: "Invalid credentials".to_string(),
         status_code: StatusCode::UNAUTHORIZED,
+    }
+}
+
+pub fn malformed(message: &str) -> AppError {
+    AppError {
+        message: message.to_string(),
+        status_code: StatusCode::BAD_REQUEST,
     }
 }

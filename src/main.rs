@@ -12,15 +12,15 @@ use std::{net::SocketAddr, str::FromStr};
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use clap::{Parser, Subcommand};
 
-use crate::err::AppError;
+use crate::{config::CliAction, err::AppError};
 
 mod models;
 mod err;
 mod auth;
 mod pagination;
 mod extract_session;
+mod config;
 
 #[derive(Template)]
 #[template(path = "home.html")]
@@ -32,40 +32,10 @@ struct HomeTemplate {}
 pub struct AppState {
     db: PgPool,
 }
-#[derive(Debug, Clone, Subcommand)]
-enum CliAction {
-    /// Start the web server
-    Serve,
-    /// Create a new admin user
-    NewAdmin {
-        #[arg(long)]
-        name: String,
-
-        #[arg(long)]
-        password: String,
-    },
-    /// Delete an admin user
-    DeleteAdmin {
-        #[arg(long)]
-        name: String,
-    },
-    /// Clean up the database
-    Clean,
-}
-
-#[derive(Parser, Debug, Clone)]
-#[command(name = "tewi", about = "A web application")]
-struct Cli {
-    #[command(subcommand)]
-    action: Option<CliAction>,
-
-    #[arg(short, long, default_value = "3000", global = true)]
-    port: u16,
-}
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    let cli = Cli::parse();
+    let cli = config::CONFIG.clone();
 
     tracing_subscriber::registry()
         .with(
