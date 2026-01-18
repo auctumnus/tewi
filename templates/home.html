@@ -11,7 +11,7 @@
       <span>{{ category.name }}</span>
       <hr />
       <ol>
-        {% for board in category.boards %}
+        {% for board in boards %}
         <li class="board-list-entry">
           <a href="/board/{{ board.name }}">{{ board.name }}</a>
         </li>
