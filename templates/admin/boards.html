@@ -4,13 +4,24 @@
 <script src="/static/home.js"></script>
 {% endblock %}
 {% block content %}
-<main class="home">
-  <div class="container-info board-index">
+<main class="admin-boards">
+  <div class="container board-index">
     {% if let Some(error) = validation %}
     <div class="quick-action-error">
       <span class="quick-action-error-text">{{ error.message }}</span>
     </div>
     {% endif %}
+    <a href="/admin/boards/create">New</a>
+    <div class="board-list">
+      {% for board in boards %}
+      <div class="post">
+        <div class="post-header">
+          <span class="trip-name">{{ board.name }}</span>
+          <span class="op-title">{{board.slug }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </main>
 {% endblock %}

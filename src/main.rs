@@ -1,15 +1,13 @@
 use askama::Template;
 use axum::{
-    Form, Json, Router,
-    extract::{Path, State},
-    http::{Error, StatusCode},
-    response::{ErrorResponse, Html, Redirect},
+    Extension, Router,
+    extract::State,
+    http::StatusCode,
+    response::Html,
     routing::{delete, get, post},
 };
-use clap::{Parser, Subcommand};
-use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::{net::SocketAddr, str::FromStr};
+use std::net::SocketAddr;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -17,7 +15,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::{
     config::CliAction,
     err::AppError,
-    models::board_categories::{BoardCategory, BoardCategoryRepository},
+    extract_session::AdminSession,
+    models::{
+        board_categories::{BoardCategory, BoardCategoryRepository},
+        boards::{Board, BoardRepository},
+    },
 };
 
 mod auth;
@@ -25,6 +27,7 @@ mod config;
 mod controllers;
 mod err;
 mod extract_session;
+mod middleware;
 mod models;
 mod pagination;
 mod view_structs;
@@ -33,6 +36,7 @@ mod view_structs;
 #[template(path = "home.html")]
 struct HomeTemplate {
     categories: Vec<BoardCategory>,
+    boards: Vec<Board>,
 }
 
 /// Shared connections, config, etc.
@@ -97,50 +101,66 @@ async fn main() -> Result<(), AppError> {
         }
     }
 }
+
 fn create_router(state: AppState) -> Router {
-    Router::new()
-        .route("/", get(home))
-        .route("/admin", get(controllers::admin::login_page))
-        .route("/admin", post(controllers::admin::login))
-        .route("/admin/boards", get(controllers::admin::boards))
+    let admin_router = Router::new()
+        .layer(Extension(AdminSession))
+        .layer(axum::middleware::from_fn(middleware::auth::verify_auth))
+        .route("/login", get(controllers::admin::login_page))
+        .route("/login", post(controllers::admin::login))
+        .route("/logout", post(controllers::admin::logout))
+        .route("/boards", get(controllers::admin::boards))
         .route(
-            "/admin/boards/create",
+            "/boards/create",
             get(controllers::admin::display_create_board),
         )
+        .route("/boards/create", post(controllers::admin::create_board))
+        .route("/boards/board/{slug}", get(controllers::admin::view_board))
         .route(
-            "/admin/boards/create",
-            post(controllers::admin::create_board),
-        )
-        .route(
-            "/admin/boards/board/{slug}",
-            get(controllers::admin::view_board),
-        )
-        .route(
-            "/admin/boards/board/{slug}",
+            "/boards/edit/{slug}",
             post(controllers::admin::update_board),
         )
         .route(
-            "/admin/boards/board/{slug}",
+            "/boards/delete/{slug}",
             delete(controllers::admin::delete_board),
-        )
+        );
+
+    Router::new()
+        .route("/", get(home))
+        .route("/board/{slug}", get(home))
+        .route("/board/{slug}/thread/{id}", get(home))
+        .nest("/admin", admin_router)
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
         .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
+        .fallback(fallback_route)
         .with_state(state)
+}
+
+async fn fallback_route() -> Result<Html<String>, StatusCode> {
+    let html = (view_structs::status::error::not_found::NotFoundTemplate {
+        board_name: "".to_string(),
+    })
+    .render()
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Html(html))
 }
 
 async fn home(State(s): State<AppState>) -> Result<Html<String>, StatusCode> {
     let category_repo = BoardCategoryRepository::new(&s);
-    let categories_results = category_repo.list_all().await;
-    return match categories_results {
-        Ok(categories) => {
-            let html = (HomeTemplate { categories })
-                .render()
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-            Ok(Html(html))
-        }
-        Err(_) => {
-            panic!("lets die")
-        }
-    };
+    let boards_repo = BoardRepository::new(&s);
+
+    let categories = category_repo
+        .list_all()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let boards = boards_repo
+        .list_all()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let html = (HomeTemplate { boards, categories })
+        .render()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Html(html))
 }
