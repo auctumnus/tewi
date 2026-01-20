@@ -14,9 +14,7 @@
 {% block content %}
 <main class="page">
   <div class="page-threads">
-    {% for thread_info in threads.items %}
-    {% call thread_template::thread_preview(thread_info) %}
-    {% endfor %}
+    {% call thread_template::thread_preview(thread) %}
   </div>
   </div>
 </main>

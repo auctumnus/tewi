@@ -1,26 +1,34 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 {% block title %}tewi - Home{% endblock %}
 {% block head %}
 <script src="/static/home.js"></script>
 {% endblock %}
 {% block content %}
-<main class="home">
-  <div class="container-info board-index">
+<main class="edit-board">
+  <div class="container board-index">
     {% if let Some(error) = validation %}
-    <div class="login-error">
-      <span class="login-error-text">{{ error.message }}</span>
+    <div class="create-board-error">
+      <span class="create-board-error-text">{{ error.message }}</span>
     </div>
     {% endif %}
-    <form class="login-form" method="post">
+    <form class="create-board-form" method="post">
       <div class="input-group horizontal">
-        <label for="username-input">Username</label>
-        <input type="text" id="username-input" name="username" />
+        <label for="username-input">Name</label>
+        <input type="text" id="name-input" name="name" value="{{board.name}}" />
       </div>
       <div class="input-group horizontal">
-        <label for="password-input">Password</label>
-        <input type="password" id="password-input" name="password" />
+        <label for="slug-input">Slug</label>
+        <input type="text" id="slug-input" name="slug" value="{{board.slug}}" />
       </div>
-      <button type="submit" class="login-button">Login</button>
+      <div class="input-group horizontal">
+        <label for="category_id-input">Category</label>
+        <select id="category_id-input" name="category_id">
+          {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="create-board-button">Save</button>
     </form>
   </div>
 </main>

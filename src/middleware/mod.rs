@@ -1,1 +1,1 @@
-pub mod auth;
+pub mod pretty_errors;

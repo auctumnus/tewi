@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.98"
-axum = "0.8.4"
+axum = { version = "0.8.4", features = ["multipart"] }
 chrono = { version = "0.4.41", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "migrate", "uuid", "chrono", "ipnetwork"] }
@@ -22,3 +22,4 @@ serde_urlencoded = "0.7.1"
 clap = { version = "4.5.54", features = ["derive"] }
 axum-extra = { version = "0.12.5", features = ["cookie"] }
 image = "0.25.9"
+axum-client-ip = "1.1.3"

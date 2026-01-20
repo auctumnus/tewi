@@ -1,10 +1,10 @@
-{% extends "layout.html" %}
+{% extends "admin/layout.html" %}
 {% block title %}tewi - Home{% endblock %}
 {% block head %}
 <script src="/static/home.js"></script>
 {% endblock %}
 {% block content %}
-<main class="home">
+<main class="create-board">
   <div class="container board-index">
     {% if let Some(error) = validation %}
     <div class="create-board-error">
@@ -17,8 +17,16 @@
         <input type="text" id="name-input" name="name" />
       </div>
       <div class="input-group horizontal">
-        <label for="password-input">Slug</label>
+        <label for="slug-input">Slug</label>
         <input type="text" id="slug-input" name="slug" />
+      </div>
+      <div class="input-group horizontal">
+        <label for="category_id-input">Category</label>
+        <select id="category_id-input" name="category_id">
+          {% for category in categories %}
+          <option value="{{ category.id }}">{{ category.name }}</option>
+          {% endfor %}
+        </select>
       </div>
       <button type="submit" class="create-board-button">Save</button>
     </form>

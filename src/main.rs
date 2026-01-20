@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::{
     Extension, Router,
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::Html,
     routing::{delete, get, post},
@@ -13,16 +13,22 @@ use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
+    board_info::BoardInfo,
     config::CliAction,
     err::AppError,
     extract_session::AdminSession,
     models::{
         board_categories::{BoardCategory, BoardCategoryRepository},
         boards::{Board, BoardRepository},
+        posts::PostRepository,
+        threads::ThreadRepository,
     },
+    pagination::PaginatedRequest,
+    view_structs::{board_page::BoardPageTemplate, status::error::not_found::NotFoundTemplate},
 };
 
 mod auth;
+mod board_info;
 mod config;
 mod controllers;
 mod err;
@@ -105,7 +111,6 @@ async fn main() -> Result<(), AppError> {
 fn create_router(state: AppState) -> Router {
     let admin_router = Router::new()
         .layer(Extension(AdminSession))
-        .layer(axum::middleware::from_fn(middleware::auth::verify_auth))
         .route("/login", get(controllers::admin::login_page))
         .route("/login", post(controllers::admin::login))
         .route("/logout", post(controllers::admin::logout))
@@ -117,32 +122,59 @@ fn create_router(state: AppState) -> Router {
         .route("/boards/create", post(controllers::admin::create_board))
         .route("/boards/board/{slug}", get(controllers::admin::view_board))
         .route(
-            "/boards/edit/{slug}",
+            "/boards/board/{slug}",
             post(controllers::admin::update_board),
         )
         .route(
-            "/boards/delete/{slug}",
-            delete(controllers::admin::delete_board),
+            "/boards/board/{slug}/delete",
+            post(controllers::admin::delete_board),
+        )
+        .route("/categories", get(controllers::admin::categories))
+        .route(
+            "/categories/create",
+            get(controllers::admin::display_create_category),
+        )
+        .route(
+            "/categories/create",
+            post(controllers::admin::create_category),
+        )
+        .route(
+            "/categories/category/{id}",
+            get(controllers::admin::view_category),
+        )
+        .route(
+            "/categories/edit/{id}",
+            post(controllers::admin::update_category),
+        )
+        .route(
+            "/categories/delete/{id}",
+            delete(controllers::admin::delete_category),
         );
 
     Router::new()
+        .layer(Extension(BoardInfo))
         .route("/", get(home))
-        .route("/board/{slug}", get(home))
-        .route("/board/{slug}/thread/{id}", get(home))
+        .route("/board/{slug}", get(controllers::thread::board_page))
+        .route("/board/{slug}", post(controllers::thread::create_thread))
+        .route(
+            "/board/{slug}/thread/{id}",
+            get(controllers::thread::thread),
+        )
         .nest("/admin", admin_router)
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
         .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
+        /* .layer(axum::middleware::from_fn(
+            middleware::pretty_errors::pretty_error_codes,
+        )) */
         .fallback(fallback_route)
         .with_state(state)
 }
 
 async fn fallback_route() -> Result<Html<String>, StatusCode> {
-    let html = (view_structs::status::error::not_found::NotFoundTemplate {
-        board_name: "".to_string(),
-    })
-    .render()
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let html = (view_structs::status::error::not_found::NotFoundTemplate { board_name: None })
+        .render()
+        .map_err(|_| StatusCode::NOT_FOUND)?;
     Ok(Html(html))
 }
 

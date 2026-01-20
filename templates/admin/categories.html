@@ -1,28 +1,27 @@
 {% extends "admin/layout.html" %}
-{% block title %}tewi - Home{% endblock %}
+{% block title %}tewi - Categories{% endblock %}
 {% block head %}
 <script src="/static/home.js"></script>
 {% endblock %}
 {% block content %}
-<main class="admin-boards">
+<main class="admin-categories">
   {% if let Some(error) = validation %}
   <div class="quick-action-error">
     <span class="quick-action-error-text">{{ error.message }}</span>
   </div>
   {% endif %}
   <div>
-    <a href="/admin/boards/create">New Board</a>
+    <a href="/admin/categories/create">New Category</a>
   </div>
   <div class="admin-list">
-    {% for board in boards %}
+    {% for category in categories %}
     <div class="admin-list-element">
       <div class="board-details">
-        <span class="board-name">{{ board.name }}</span>
-        <span class="board-slug">/{{ board.slug }}/</span>
+        <span class="board-name">{{ category.name }}</span>
       </div>
       <div class="board-actions">
-        <a href="/admin/boards/board/{{ board.slug }}">Delete</a>
-        <a href="/admin/boards/board/{{ board.slug }}">Edit</a>
+        <a href="/admin/boards/board/{{ category.id }}">Delete</a>
+        <a href="/admin/boards/board/{{ category.id }}">Edit</a>
       </div>
     </div>
     {% endfor %}

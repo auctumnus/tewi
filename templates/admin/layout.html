@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}tewi{% endblock %}</title>
+  <link rel="stylesheet" href="/static/main.css" />
+  <link rel="stylesheet" href="/static/admin.css" />
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <div class="header">
+    <nav>
+      <a href="/">Home</a>
+    </nav>
+    <div class="content-hat">
+      {% block content_hat %}{% endblock %}
+    </div>
+  </div>
+
+  <div class="admin-container">
+    <div class="admin-nav">
+      <ul>
+        <li class="admin-nav-item">
+          <a href="/admin/categories">Board Categories</a>
+        </li>
+        <li class="admin-nav-item">
+          <a href="/admin/boards">Boards</a>
+        </li>
+      </ul>
+    </div>
+    <div class="admin-content">
+      {% block content %}
+
+      {% endblock %}
+    </div>
+  </div>
+
+  <!-- load last scripts -->
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

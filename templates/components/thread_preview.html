@@ -1,5 +1,6 @@
 {% import "components/post.html" as post_macro %}
 {% macro thread_preview(thread_info) %}
+{% if let Some(op_post) = thread_info.op_post %}
 <div class="thread-preview">
   <div class="thread">
     <div class="attachment-container">
@@ -8,15 +9,15 @@
     </div>
     <div class="thread-posts">
       <div>
-        <span class="trip-name">{{ thread_info.op_post.name }}</span>
-        <a class="post-number" href="{{ thread_info.op_post.post_number }}">ID.
-          {{thread_info.op_post.post_number}}</a>
-        <div class="op-title">{{ thread_info.op_post.title }}</div>
+        <span class="trip-name">{{ op_post.name }}</span>
+        <a class="post-number" href="{{ op_post.post_number }}">ID.
+          {{op_post.post_number}}</a>
+        <div class="op-title">{{ op_post.title }}</div>
         <div class="post-body">
-          {{ thread_info.op_post.content | linebreaks }}
+          {{ op_post.content | linebreaks }}
         </div>
       </div>
-      {% for post in thread_info.posts %}
+      {% for post in thread_info.replies %}
       <div class="post">
         <div class="attachment-container">
           <img class="attachment" src="" width="140" height="160" />
@@ -36,4 +37,7 @@
   </div>
   <hr />
 </div>
+{% else %}
+<div>This thread has no OP, thats weird.</div>
+{% endif %}
 {% endmacro %}

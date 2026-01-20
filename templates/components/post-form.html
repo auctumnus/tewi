@@ -1,8 +1,9 @@
 {% macro post_form(formRoute) %}
 <div class="post-form-container">
   <form class="post-form" method="POST" action="{{ formRoute }}" enctype="multipart/form-data">
+    <input type="text" name="name" />
     <input type="text" name="title" />
-    <input type="file" name="attachment" />
+    <input type="file" name="attachments" />
     <textarea name="content"></textarea>
     <button type="submit">Submit</button>
   </form>

@@ -1,6 +1,14 @@
 use uuid::Uuid;
 
-use crate::{AppState, err::AppResult, models::{admins::Admin, threads::{DBThread, Thread, ThreadRepository}}, pagination::{PaginatedRequest, PaginatedResponse}};
+use crate::{
+    AppState,
+    err::AppResult,
+    models::{
+        admins::Admin,
+        threads::{DBThread, Thread, ThreadRepository},
+    },
+    pagination::{PaginatedRequest, PaginatedResponse},
+};
 
 #[derive(sqlx::FromRow)]
 pub struct Board {
@@ -35,7 +43,11 @@ impl BoardRepository {
     }
 
     pub async fn create(&self, requestor: Admin, create_board: CreateBoard) -> AppResult<Board> {
-        tracing::info!("Admin {} is creating a new board: /{}/", requestor.name, create_board.slug);
+        tracing::info!(
+            "Admin {} is creating a new board: /{}/",
+            requestor.name,
+            create_board.slug
+        );
         let board_id = Uuid::new_v4();
         sqlx::query!(
             "INSERT INTO boards (id, slug, name, description, category_id, next_post_number) VALUES ($1, $2, $3, $4, $5, $6)",
@@ -53,16 +65,18 @@ impl BoardRepository {
 
     pub async fn delete(&self, requestor: Admin, board_id: Uuid) -> AppResult<()> {
         tracing::info!("Admin {} is deleting board {}", requestor.name, board_id);
-        sqlx::query!(
-            "DELETE FROM boards WHERE id = $1",
-            board_id
-        )
-        .execute(&self.0.db)
-        .await?;
+        sqlx::query!("DELETE FROM boards WHERE id = $1", board_id)
+            .execute(&self.0.db)
+            .await?;
         Ok(())
     }
 
-    pub async fn edit(&self, requestor: Admin, board_id: Uuid, edit_board: EditBoard) -> AppResult<Board> {
+    pub async fn edit(
+        &self,
+        requestor: Admin,
+        board_id: Uuid,
+        edit_board: EditBoard,
+    ) -> AppResult<Board> {
         tracing::info!("Admin {} is editing board {}", requestor.name, board_id);
         let current_board = self.find_by_id(board_id).await?;
         let slug = edit_board.slug.unwrap_or(current_board.slug);
@@ -86,35 +100,32 @@ impl BoardRepository {
     }
 
     pub async fn find_by_id(&self, board_id: Uuid) -> AppResult<Board> {
-        sqlx::query_as!(
-            Board,
-            "SELECT * FROM boards WHERE id = $1",
-            board_id
-        )
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Board, "SELECT * FROM boards WHERE id = $1", board_id)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn find_by_slug(&self, slug: &str) -> AppResult<Board> {
-        sqlx::query_as!(
-            Board,
-            "SELECT * FROM boards WHERE slug = $1",
-            slug
-        )
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Board, "SELECT * FROM boards WHERE slug = $1", slug)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn list_all(&self) -> AppResult<Vec<Board>> {
-        sqlx::query_as!(
-            Board,
-            "SELECT * FROM boards ORDER BY name"
-        )
-        .fetch_all(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Board, "SELECT * FROM boards ORDER BY name")
+            .fetch_all(&self.0.db)
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn list_all_slugs(&self) -> AppResult<Vec<String>> {
+        return sqlx::query_as!(Board, "SELECT * FROM boards ORDER BY name")
+            .fetch_all(&self.0.db)
+            .await
+            .map_err(Into::into)
+            .map(|boards| boards.iter().map(|board| board.slug.clone()).collect());
     }
 
     pub async fn increment_next_post_number(&self, board_id: Uuid) -> AppResult<i32> {
@@ -127,7 +138,11 @@ impl BoardRepository {
         Ok(next_post_number)
     }
 
-    pub async fn threads_for_board(&self, board_id: Uuid, pagination: PaginatedRequest) -> AppResult<PaginatedResponse<Thread>> {
+    pub async fn threads_for_board(
+        &self,
+        board_id: Uuid,
+        pagination: PaginatedRequest,
+    ) -> AppResult<PaginatedResponse<Thread>> {
         let db_threads = sqlx::query_as!(
             DBThread,
             r#"SELECT *
@@ -142,12 +157,11 @@ impl BoardRepository {
         )
         .fetch_all(&self.0.db)
         .await?;
-        let total = sqlx::query_scalar!(
-            "SELECT COUNT(*) FROM threads WHERE board_id = $1",
-            board_id
-        )
-        .fetch_one(&self.0.db)
-        .await?.unwrap_or(0);
+        let total =
+            sqlx::query_scalar!("SELECT COUNT(*) FROM threads WHERE board_id = $1", board_id)
+                .fetch_one(&self.0.db)
+                .await?
+                .unwrap_or(0);
 
         let thread_repo = ThreadRepository::new(&self.0);
         let mut threads = Vec::with_capacity(db_threads.len());
