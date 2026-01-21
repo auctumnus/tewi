@@ -1,7 +1,7 @@
 use askama::Template;
 use axum::{
     Extension, Router,
-    extract::{Path, State, connect_info::IntoMakeServiceWithConnectInfo},
+    extract::{State, connect_info::IntoMakeServiceWithConnectInfo},
     http::StatusCode,
     response::Html,
     routing::{delete, get, post},
@@ -18,15 +18,10 @@ use crate::{
     config::CliAction,
     err::AppError,
     extract_session::AdminSession,
-    middleware::pretty_errors::pretty_error_codes,
     models::{
         board_categories::{BoardCategory, BoardCategoryRepository},
         boards::{Board, BoardRepository},
-        posts::PostRepository,
-        threads::ThreadRepository,
     },
-    pagination::PaginatedRequest,
-    view_structs::{board_page::BoardPageTemplate, status::error::not_found::NotFoundTemplate},
 };
 
 mod auth;

@@ -1,7 +1,7 @@
+{% extends "layout.html" %}
+
 {% import "components/thread_preview.html" as thread_template %}
 {% import "components/post-form.html" as post_form_macro %}
-
-{% extends "layout.html" %}
 {% block title %}tewi - {% endblock %}
 {% block head %}
 <script src="/static/home.js"></script>
@@ -9,12 +9,14 @@
 
 {% block content_hat %}
 {% call post_form_macro::post_form(form_route) %}
+{% endcall %}
 {% endblock %}
 
 {% block content %}
 <main class="page">
   <div class="page-threads">
     {% call thread_template::thread_preview(thread) %}
+    {% endcall %}
   </div>
   </div>
 </main>

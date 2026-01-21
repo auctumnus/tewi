@@ -10,35 +10,50 @@ use axum::{
 use serde::de::DeserializeOwned;
 
 #[derive(Debug)]
-pub struct ParsedMultipart<T, B> {
-    pub fields: T,
-    pub files: B,
-}
-
-#[derive(Debug)]
 pub enum MultipartParseError {
     IteratorError,
     //KeyNameError,
     ValueError,
     AxumError,
 }
-
-async fn read_chunks_until_done<'a>(mut field: Field<'a>) -> Result<Vec<Bytes>, MultipartError> {
-    let mut chunks = Vec::<Bytes>::new();
-    while let Some(chunk) = field.chunk().await? {
-        chunks.push(chunk);
-    }
-    return Ok(chunks);
+pub enum MultipartFormFieldErrors {
+    NotText,
+    NotAFile,
 }
 
-pub async fn parse_multipart<T: DeserializeOwned, U: DeserializeOwned>(
+#[derive(Debug)]
+pub enum MultipartFormField {
+    File(Bytes),
+    Text(String),
+}
+
+impl MultipartFormField {
+    pub fn text(&self) -> Result<String, MultipartFormFieldErrors> {
+        match self {
+            MultipartFormField::Text(text) => Ok(text.to_owned()),
+            _ => Err(MultipartFormFieldErrors::NotText),
+        }
+    }
+    pub fn file(&self) -> Result<Bytes, MultipartFormFieldErrors> {
+        match self {
+            MultipartFormField::File(file) => Ok(file.to_owned()),
+            _ => Err(MultipartFormFieldErrors::NotAFile),
+        }
+    }
+}
+
+async fn read_chunks_until_done<'a>(mut field: Field<'a>) -> Result<Bytes, MultipartError> {
+    let mut chunks = Vec::<u8>::new();
+    while let Some(chunk) = field.chunk().await? {
+        chunks = [chunks, chunk.to_vec()].concat();
+    }
+    return Ok(Bytes::from(chunks));
+}
+
+pub async fn parse_multipart(
     mut multipart: Multipart,
-) -> Result<
-    ParsedMultipart<HashMap<String, String>, HashMap<String, Vec<Bytes>>>,
-    MultipartParseError,
-> {
-    let mut text_fields = HashMap::<String, String>::new();
-    let mut files = HashMap::<String, Vec<Bytes>>::new();
+) -> Result<HashMap<String, MultipartFormField>, MultipartParseError> {
+    let mut fields = HashMap::<String, MultipartFormField>::new();
 
     while let Some(field) = multipart
         .next_field()
@@ -51,11 +66,11 @@ pub async fn parse_multipart<T: DeserializeOwned, U: DeserializeOwned>(
             .to_string();
 
         match &field.content_type() {
-            Some(content_type) => {
+            Some(_content_type) => {
                 let data = read_chunks_until_done(field)
                     .await
                     .map_err(|_| MultipartParseError::ValueError)?;
-                files.insert(name.clone(), data);
+                fields.insert(name.clone(), MultipartFormField::File(data));
             }
             None => {
                 let data = field
@@ -63,12 +78,9 @@ pub async fn parse_multipart<T: DeserializeOwned, U: DeserializeOwned>(
                     .await
                     .map_err(|_| MultipartParseError::AxumError)?;
 
-                text_fields.insert(name.clone(), data);
+                fields.insert(name.clone(), MultipartFormField::Text(data));
             }
         };
     }
-    return Ok(ParsedMultipart {
-        fields: text_fields,
-        files: files,
-    });
+    return Ok(fields);
 }

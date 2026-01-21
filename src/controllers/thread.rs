@@ -65,27 +65,36 @@ pub async fn board_page(
 
 enum FormFieldErrors {
     Missing(String),
+    Invalid,
 }
 
 fn hashmap_to_post_form_text_fields(
-    data: HashMap<String, String>,
+    data: HashMap<String, parse_multipart::MultipartFormField>,
 ) -> Result<PostForm, FormFieldErrors> {
     Ok(PostForm {
         name: data
             .get("name")
             .ok_or(FormFieldErrors::Missing("name".to_owned()))?
+            .text()
+            .map_err(|_| FormFieldErrors::Invalid)?
             .clone(),
         title: data
             .get("title")
             .ok_or(FormFieldErrors::Missing("name".to_owned()))?
-            .clone(),
-        attachments: data
-            .get("attachments")
-            .ok_or(FormFieldErrors::Missing("name".to_owned()))?
+            .text()
+            .map_err(|_| FormFieldErrors::Invalid)?
             .clone(),
         content: data
             .get("content")
             .ok_or(FormFieldErrors::Missing("name".to_owned()))?
+            .text()
+            .map_err(|_| FormFieldErrors::Invalid)?
+            .clone(),
+        attachments: data
+            .get("attachments")
+            .ok_or(FormFieldErrors::Missing("name".to_owned()))?
+            .file()
+            .map_err(|_| FormFieldErrors::Invalid)?
             .clone(),
     })
 }
@@ -104,18 +113,15 @@ pub async fn create_thread(
             let attachments = Vec::<Attachment>::new();
 
             println!("Desu 1");
-            let mut parsed = parse_multipart::parse_multipart::<PostForm, PostForm>(multipart)
+            let parsed = parse_multipart::parse_multipart(multipart)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             println!("Desu 2");
 
-            parsed
-                .fields
-                .insert("attachments".to_string(), "attachments".to_string());
             println!("Desu 3");
 
-            let form_fields = hashmap_to_post_form_text_fields(parsed.fields)
-                .map_err(|_| StatusCode::BAD_REQUEST)?;
+            let form_fields =
+                hashmap_to_post_form_text_fields(parsed).map_err(|_| StatusCode::BAD_REQUEST)?;
             println!("Desu 4");
 
             let op_post = post_repo
@@ -166,18 +172,13 @@ pub async fn create_post(
             let attachments = Vec::<Attachment>::new();
 
             println!("Desu 1");
-            let mut parsed = parse_multipart::parse_multipart::<PostForm, PostForm>(multipart)
+            let parsed = parse_multipart::parse_multipart(multipart)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             println!("Desu 2");
 
-            parsed
-                .fields
-                .insert("attachments".to_string(), "attachments".to_string());
-            println!("Desu 3");
-
-            let form_fields = hashmap_to_post_form_text_fields(parsed.fields)
-                .map_err(|_| StatusCode::BAD_REQUEST)?;
+            let form_fields =
+                hashmap_to_post_form_text_fields(parsed).map_err(|_| StatusCode::BAD_REQUEST)?;
             println!("Desu 4");
 
             let thread = thread_repo

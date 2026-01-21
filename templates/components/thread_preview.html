@@ -2,39 +2,39 @@
 {% macro thread_preview(thread_info) %}
 <div class="thread-preview">
   {% if let Some(op_post) = thread_info.op_post %}
-  <div class="thread">
+  <div class="post" :class="{ 'image-expanded': open }" x-data="{height: 140, width: 160, open: false}">
     <div class="attachment-container">
-      <img class="attachment" src="https://picsum.photos/1200/1400" width="140" height="160" />
+      <img class="attachment" src="https://picsum.photos/1200/1400" x-bind:width="open ? undefined : width"
+        x-on:click="open = !open" />
       <span>filename.jpeg</span>
     </div>
-    <div class="thread-posts">
-      <div>
-        <span class="trip-name">{{ op_post.name }}</span>
-        <a class="post-number" href="{{ op_post.post_number }}">ID.
-          {{op_post.post_number}}</a>
-        <div class="op-title">{{ op_post.title }}</div>
-        <div class="post-body">
-          {{ op_post.content | linebreaks }}
-        </div>
-      </div>
-      {% for post in thread_info.replies %}
-      <div class="post">
-        <div class="attachment-container" x-data="{height: 140, width: 160, open: false}">
-          <img class="attachment" src="https://picsum.photos/1200/1400" x-bind:width="open ? undefined : width"
-            x-on:click="open = !open" />
-          <span>filename.jpeg</span>
-        </div>
-        <div>
-          <div class="post-header">
-            <span class="trip-name">{{ post.name }}</span>
-            <a class="post-number" href="{{ post.post_number }}">ID. {{post.post_number}}</a>
-            <span class="op-title">{{post.title }}</span>
-          </div>
-          <div class="post-body">{{ post.content | linebreaks }}</div>
-        </div>
-      </div>
-      {% endfor %}
+    <div class="post-header">
+      <div class="op-title">{{ op_post.title }}</div>
+      <span class="trip-name">{{ op_post.name }}</span>
+      <span class="post-date">{{ op_post.created_at }}</span>
+      <a class="post-number" href="{{ op_post.post_number }}">ID.
+        {{op_post.post_number}}</a>
     </div>
+    <div class="post-body">
+      {{ op_post.content | linebreaks }}
+    </div>
+    {% for post in thread_info.replies %}
+    <div class="post" x-data="{height: 140, width: 160, open: false}">
+      <div class="attachment-container">
+        <img class="attachment" src="https://picsum.photos/1200/1400" x-bind:width="open ? undefined : width"
+          x-on:click="open = !open" />
+        <span>filename.jpeg</span>
+      </div>
+      <div class="post-header">
+        {% let name = post.name %}
+        <span class="trip-name">{{ name | defined_or("Anonymous") }}</span>
+        <span class="post-date">{{ post.created_at }}</span>
+        <a class="post-number" href="{{ post.post_number }}">ID. {{post.post_number}}</a>
+      </div>
+      <div class="post-body">{{ post.content | linebreaks }}</div>
+
+    </div>
+    {% endfor %}
   </div>
   {% else %}
   <div>This thread has no OP, thats weird.</div>

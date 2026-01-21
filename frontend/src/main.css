@@ -5,7 +5,7 @@
 @import url(login.css);
 @import url(post-form.css);
 @import url(post.css);
-@import url(thread.css);
+@import url(board-page.css);
 
 .header {
   padding: var(--spacing-normal) var(--spacing-large);
@@ -38,35 +38,6 @@
   margin-bottom: var(--spacing-4xl);
 }
 
-@media (max-width: 640px) {
-  :root {
-    --width-container-info: 480px;
-    --width-container-narrow: 640px;
-    --width-container: 640px;
-  }
-}
-@media (max-width: 760px) {
-  :root {
-    --width-container-info: 480px;
-    --width-container-narrow: 640px;
-    --width-container: 640px;
-  }
-}
-@media (max-width: 1280px) {
-  :root {
-    --width-container-info: 480px;
-    --width-container-narrow: 640px;
-    --width-container: 720px;
-  }
-}
-@media (max-width: 1800px) {
-  :root {
-    --width-container-info: 480px;
-    --width-container-narrow: 640px;
-    --width-container: 1280px;
-  }
-}
-
 .container-info {
   width: 100%;
   max-width: var(--width-container-info);
@@ -88,7 +59,9 @@ main.page {
   justify-content: center;
 }
 
-.input-group {
+.input-group > input:required + label ::after,
+.input-group > textarea:required + label::after {
+  content: "*";
 }
 
 .input-group.horizontal {
@@ -99,6 +72,7 @@ main.page {
 }
 .input-group.vertical {
   display: flex;
-  flex-direction: column;
+  /* column reverse so that we can abuse sibling selectors to deal with input dependant label styling */
+  flex-direction: column-reverse;
   gap: var(--spacing-small);
 }

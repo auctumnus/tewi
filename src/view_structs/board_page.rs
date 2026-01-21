@@ -1,4 +1,5 @@
 use askama::Template;
+use axum::body::Bytes;
 use serde::Deserialize;
 
 use crate::{
@@ -15,10 +16,9 @@ pub struct BoardPageTemplate {
     pub form_route: String,
 }
 
-#[derive(Deserialize)]
 pub struct PostForm {
     pub name: String,
     pub title: String,
-    pub attachments: String,
+    pub attachments: Bytes,
     pub content: String,
 }

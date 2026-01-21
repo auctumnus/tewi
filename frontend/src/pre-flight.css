@@ -15,16 +15,58 @@
   --gray-slight-dark: rgba(0, 0, 0, 0.65);
   --gray-dark: rgba(0, 0, 0, 0.85);
   --orange-light: rgb(239, 209, 157);
+  --blue: rgb(153, 170, 214);
+  --green-light: rgb(178, 205, 153);
+  --green: rgb(152, 182, 124);
 
   --bg-primary: var(--orange-light);
   --bg-secondary: var(--gray-light);
   --text-primary: var(--gray);
+  --text-secondary: var(--blue);
+  --text-tertiary: var(--green);
 
   --font-sans: "SF Pro Text", sans-serif;
+  --font-mono: "Fira Code", mono;
 
   --font-size-caption: 1rem;
   --font-size-text: 1.3rem;
   --font-size-sub-title: 2.2rem;
+}
+
+@media (max-width: 1800px) {
+  :root {
+    --width-container-info: 480px;
+    --width-container-narrow: 640px;
+    --width-container: 1260px;
+  }
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --width-container-info: 480px;
+    --width-container-narrow: 640px;
+    --width-container: 1080px;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --width-container-info: 480px;
+    --width-container-narrow: 640px;
+    --width-container: 640px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --width-container-info: 480px;
+    --width-container-narrow: 640px;
+    --width-container: 640px;
+  }
+}
+/* required by aplinejs x-cloak pseudo directive  - https://alpinejs.dev/directives/cloak */
+[x-cloak] {
+  display: none !important;
 }
 
 html {
