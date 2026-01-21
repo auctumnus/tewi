@@ -11,13 +11,20 @@
 {% call post_form_macro::post_form("") %}
 {% endblock %}
 
+{% block nav %}
+<div>
+  {% for slug in board_slugs %}
+  <div><a href="/board/">/{{ slug }}/</a></div>
+  {% endfor %}
+</div>
+{% endblock %}
+
 {% block content %}
 <main class="page">
   <div class="page-threads">
     {% for thread_info in threads.items %}
     {% call thread_template::thread_preview(thread_info) %}
     {% endfor %}
-  </div>
   </div>
 </main>
 {% endblock %}

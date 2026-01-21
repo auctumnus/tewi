@@ -1,4 +1,5 @@
 use askama::Template;
+use serde::Deserialize;
 
 use crate::{
     models::{boards::Board, threads::Thread},
@@ -13,6 +14,7 @@ pub struct BoardPageTemplate {
     pub threads: PaginatedResponse<Thread>,
 }
 
+#[derive(Deserialize)]
 pub struct PostForm {
     pub name: String,
     pub title: String,

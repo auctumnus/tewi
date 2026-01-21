@@ -1,7 +1,7 @@
 {% import "components/post.html" as post_macro %}
 {% macro thread_preview(thread_info) %}
-{% if let Some(op_post) = thread_info.op_post %}
 <div class="thread-preview">
+  {% if let Some(op_post) = thread_info.op_post %}
   <div class="thread">
     <div class="attachment-container">
       <img class="attachment" src="" width="140" height="160" />
@@ -35,9 +35,9 @@
       {% endfor %}
     </div>
   </div>
+  {% else %}
+  <div>This thread has no OP, thats weird.</div>
+  {% endif %}
   <hr />
 </div>
-{% else %}
-<div>This thread has no OP, thats weird.</div>
-{% endif %}
 {% endmacro %}

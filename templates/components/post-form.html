@@ -1,11 +1,25 @@
 {% macro post_form(formRoute) %}
 <div class="post-form-container">
-  <form class="post-form" method="POST" action="{{ formRoute }}" enctype="multipart/form-data">
-    <input type="text" name="name" />
-    <input type="text" name="title" />
-    <input type="file" name="attachments" />
-    <textarea name="content"></textarea>
-    <button type="submit">Submit</button>
+  <form class="post-form" method="POST" action="{{ formRoute }}" enctype="multipart/form-data" autocomplete="off"
+    x-data="{ content: '', file: undefined }">
+    <div class="input-group vertical">
+      <label for="name-input">Name</label>
+      <input type="text" name="name" id="name-input" autocomplete="off" />
+    </div>
+    <div class="input-group vertical">
+      <label for="title-input">Title</label>
+      <input type="text" name="title" id="title-input" autocomplete="off" />
+    </div>
+    <div class="input-group vertical">
+      <label for="attachments-input">Attachments</label>
+      <input type="file" name="attachments" id="attachments-input" autocomplete="off" required="true" />
+    </div>
+    <div class="input-group vertical">
+      <label></label>
+      <label for="content-input">Content</label>
+      <textarea name="content" id="content-input" autocomplete="off" x-model="content"></textarea>
+    </div>
+    <button type="submit" x-bind:disabled="content.length <= 0" x-effect="console.log(content.length)">Submit</button>
   </form>
 </div>
 {% endmacro %}

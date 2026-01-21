@@ -32,7 +32,7 @@ pub struct DBAttachment {
     pub original_filename: String,
     pub spoilered: bool,
 }
-
+#[derive(Debug)]
 pub struct Attachment {
     pub id: Uuid,
     pub post_id: Uuid,

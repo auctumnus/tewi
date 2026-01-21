@@ -1,6 +1,6 @@
 use askama::Template;
 
-use crate::{models::threads::Thread, pagination::PaginatedResponse};
+use crate::models::threads::Thread;
 
 #[derive(Template)]
 #[template(path = "thread.html")]
@@ -10,9 +10,13 @@ pub struct ThreadTemplate {
     pub thread: Thread,
 }
 
-pub struct PostForm {
+pub struct PostFormTextFields {
     pub name: String,
     pub title: String,
-    pub attachments: String,
     pub content: String,
 }
+pub struct PostFormFiles {
+    pub attachments: String,
+}
+
+pub struct PostForm(PostFormTextFields, PostFormFiles);

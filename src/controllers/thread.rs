@@ -1,11 +1,12 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, net::SocketAddr};
 
 use askama::Template;
 use axum::{
-    extract::{Multipart, Path, Query, State},
+    extract::{ConnectInfo, Multipart, Path, Query, State},
     http::StatusCode,
     response::{Html, Redirect},
 };
+use serde::Deserialize;
 
 use crate::{
     AppState,
@@ -13,12 +14,15 @@ use crate::{
     models::{
         attachments::{Attachment, AttachmentRepository},
         boards::BoardRepository,
-        posts::PostRepository,
+        posts::{CreatePost, PostCreationTarget, PostRepository},
         threads::ThreadRepository,
     },
     pagination::PaginatedRequest,
+    parse_multipart,
     view_structs::{
-        self, board_page::BoardPageTemplate, status::error::not_found::NotFoundTemplate,
+        self,
+        board_page::{BoardPageTemplate, PostForm},
+        status::error::not_found::NotFoundTemplate,
     },
 };
 
@@ -41,6 +45,7 @@ pub async fn board_page(
                 )
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            dbg!(&threads);
             let html = (BoardPageTemplate {
                 board_name: Some(board.name),
                 board_slugs,
@@ -59,109 +64,83 @@ pub async fn board_page(
     }
 }
 
+enum FormFieldErrors {
+    Missing(String),
+}
+
+fn hashmap_to_post_form_text_fields(
+    data: HashMap<String, String>,
+) -> Result<PostForm, FormFieldErrors> {
+    Ok(PostForm {
+        name: data
+            .get("name")
+            .ok_or(FormFieldErrors::Missing("name".to_owned()))?
+            .clone(),
+        title: data
+            .get("title")
+            .ok_or(FormFieldErrors::Missing("name".to_owned()))?
+            .clone(),
+        attachments: data
+            .get("attachments")
+            .ok_or(FormFieldErrors::Missing("name".to_owned()))?
+            .clone(),
+        content: data
+            .get("content")
+            .ok_or(FormFieldErrors::Missing("name".to_owned()))?
+            .clone(),
+    })
+}
+
 pub async fn create_thread(
-    Path(path): Path<String>,
-    //Query(query): Query<PaginatedRequest>,
+    BoardInfo(board, _): BoardInfo,
     State(s): State<AppState>,
-    //ClientIp(ip): ClientIp,
-    mut multipart: Multipart,
+    ConnectInfo(connection_info): ConnectInfo<SocketAddr>,
+    multipart: Multipart,
 ) -> Result<Redirect, StatusCode> {
-    let board_repo = BoardRepository::new(&s);
     let post_repo = PostRepository::new(&s);
-    let attachment_repo = AttachmentRepository::new(&s);
-    let board = board_repo.find_by_slug(&path).await;
+    let thread_repo = ThreadRepository::new(&s);
 
     match board {
-        Ok(board) => {
-            let mut attachments = Vec::<Attachment>::new();
-            let mut text_fields = HashMap::<String, String>::new();
+        Some(board) => {
+            let attachments = Vec::<Attachment>::new();
 
-            println!("DESU 2");
-            while let Some(field) = multipart
-                .next_field()
+            let mut parsed = parse_multipart::parse_multipart::<PostForm, PostForm>(multipart)
                 .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-            {
-                println!("DESU 3");
-                //dbg!(&field);
-                let name = field
-                    .name()
-                    .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?
-                    .to_string();
-                println!("DESU 4, {}", name);
-                println!("DESU 4, {:#?}", &field.headers());
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-                match &field.content_type() {
-                    Some(content_type) => {
-                        println!("DESU 5, {:#?}", content_type);
-                        println!("DESU 6");
-                        /* let data = field.bytes().await.map_err(|_| {
-                            println!("desu desu desu");
-                            StatusCode::INTERNAL_SERVER_ERROR
-                        })?; */
-                        println!("DESU 7");
-                        /*  let attachment = attachment_repo
-                            .create(CreateAttachment {
-                                data: data.into(),
-                                post_id: Uuid::new_v4(),
-                                mime_type,
-                                original_filename: name,
-                                spoilered: false,
-                            })
-                            .await
-                            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            parsed
+                .fields
+                .insert("attachments".to_string(), "attachments".to_string());
 
-                        dbg!(&attachment.id);
-                        attachments.push(attachment); */
-                    }
-                    None => {
-                        println!("Desu 5, Nope");
-                        let data = field
-                            .text()
-                            .await
-                            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let form_fields = hashmap_to_post_form_text_fields(parsed.fields)
+                .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-                        println!("Desu 6, {}", data);
-
-                        text_fields.insert(
-                            (match name.as_str() {
-                                "name" => Ok("name"),
-                                "title" => Ok("title"),
-                                "content" => Ok("content"),
-                                _ => Err(StatusCode::BAD_REQUEST),
-                            })?
-                            .to_string(),
-                            data,
-                        );
-                    }
-                };
-                println!("DESU 8");
-            }
-
-            println!("DESU 9");
-            println!("AWAWAWAWAWAWAWAWA, {:#?}", text_fields);
-
-            return Ok(Redirect::to(format!("/boards/{}", board.slug).as_str()));
-
-            /* let thread = post_repo
+            let op_post = post_repo
                 .create(
-                    ip.into(),
+                    connection_info.ip().into(),
                     CreatePost {
                         target: PostCreationTarget::Board(board.id),
-                        title: payload.title,
-                        name: payload.name,
-                        content: payload.content,
+                        title: form_fields.title,
+                        name: form_fields.name,
+                        content: form_fields.content,
                         attachments,
                     },
                 )
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+            let thread = thread_repo
+                .find_by_id(op_post.thread_id)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            dbg!(&op_post);
+
             return Ok(Redirect::to(
-                format!("/boards/{}/thread/{}", board.slug, thread.post_number,).as_str(),
-            )); */
+                format!("/board/{}/thread/{}", board.slug, op_post.post_number).as_str(),
+            ));
         }
-        Err(_) => Err(StatusCode::NOT_FOUND),
+        None => Err(StatusCode::NOT_FOUND),
     }
 } /* 
 pub async fn create_post(
@@ -216,20 +195,18 @@ mut multipart: Multipart,
 
 pub async fn thread(
     BoardInfo(board, board_slugs): BoardInfo,
+    Path(path): Path<(String, String)>,
     State(s): State<AppState>,
 ) -> Result<Html<String>, StatusCode> {
     return match board {
         Some(board) => {
-            let board_repo = BoardRepository::new(&s);
             let thread_repo = ThreadRepository::new(&s);
 
-            let boards = board_repo
-                .list_all()
-                .await
-                .map_err(|_| StatusCode::NOT_FOUND)?;
-
             let thread = thread_repo
-                .find_by_board_and_number(board.id, 1)
+                .find_by_board_and_number(
+                    board.id,
+                    path.1.parse::<i32>().map_err(|_| StatusCode::NOT_FOUND)?,
+                )
                 .await
                 .map_err(|_| StatusCode::NOT_FOUND)?;
 

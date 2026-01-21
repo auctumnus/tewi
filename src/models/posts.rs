@@ -1,11 +1,21 @@
-
 use std::net::IpAddr;
 
 use chrono::{DateTime, Utc};
 use ipnetwork::IpNetwork;
 use uuid::Uuid;
 
-use crate::{AppState, err::{AppResult, banned, unauthorized}, models::{admins::Admin, attachments::{Attachment, AttachmentRepository}, bans::BanRepository, boards::BoardRepository, ips::IpRepository, threads::ThreadRepository}};
+use crate::{
+    AppState,
+    err::{AppResult, banned, unauthorized},
+    models::{
+        admins::Admin,
+        attachments::{Attachment, AttachmentRepository},
+        bans::BanRepository,
+        boards::BoardRepository,
+        ips::IpRepository,
+        threads::ThreadRepository,
+    },
+};
 
 #[derive(sqlx::FromRow)]
 pub struct DBPost {
@@ -22,7 +32,7 @@ pub struct DBPost {
     pub created_at: DateTime<Utc>,
     pub hidden_at: Option<DateTime<Utc>>,
 }
-
+#[derive(Debug)]
 pub struct Post {
     pub id: Uuid,
     pub thread_id: Uuid,
@@ -48,7 +58,7 @@ pub enum AdminAction {
     Ban {
         reason: String,
         duration: Option<i64>,
-    }
+    },
 }
 
 pub enum PostAction {
@@ -58,7 +68,7 @@ pub enum PostAction {
     AdminAction {
         requestor: Admin,
         action: AdminAction,
-    }
+    },
 }
 
 pub enum PostCreationTarget {
@@ -95,25 +105,21 @@ impl PostRepository {
         let post_id = Uuid::new_v4();
         let board_id = match create_post.target {
             PostCreationTarget::Thread(thread_id) => {
-                let board_id = sqlx::query_scalar!(
-                    "SELECT board_id FROM threads WHERE id = $1",
-                    thread_id
-                )
-                .fetch_one(&self.0.db)
-                .await?;
+                let board_id =
+                    sqlx::query_scalar!("SELECT board_id FROM threads WHERE id = $1", thread_id)
+                        .fetch_one(&self.0.db)
+                        .await?;
                 match board_id {
                     Some(board_id) => board_id,
                     None => return Err(unauthorized("Thread does not belong to a board")),
                 }
-            },
+            }
             PostCreationTarget::Board(board_id) => board_id,
         };
         let boards = BoardRepository::new(&self.0);
         let board = boards.find_by_id(board_id).await?;
         let (thread_id, post_number) = match create_post.target {
-            PostCreationTarget::Thread(thread_id) => {
-                (thread_id, board.next_post_number)
-            },
+            PostCreationTarget::Thread(thread_id) => (thread_id, board.next_post_number),
             PostCreationTarget::Board(board_id) => {
                 // make a new thread
                 let threads = ThreadRepository::new(&self.0);
@@ -146,10 +152,15 @@ impl PostRepository {
         let attachment_repo = AttachmentRepository::new(&self.0);
         let attachments = attachment_repo.find_by_post_id(db_post.id).await?;
 
-        self.materialize_from_attachments(db_post, attachments).await
+        self.materialize_from_attachments(db_post, attachments)
+            .await
     }
 
-    pub async fn materialize_from_attachments(&self, db_post: DBPost, attachments: Vec<Attachment>) -> AppResult<Post> {
+    pub async fn materialize_from_attachments(
+        &self,
+        db_post: DBPost,
+        attachments: Vec<Attachment>,
+    ) -> AppResult<Post> {
         Ok(Post {
             id: db_post.id,
             thread_id: db_post.thread_id,
@@ -166,24 +177,24 @@ impl PostRepository {
     }
 
     pub async fn find_by_id(&self, post_id: Uuid) -> AppResult<DBPost> {
-        sqlx::query_as::<_, DBPost>(
-            "SELECT * FROM posts WHERE id = $1"
-        )
-        .bind(post_id)
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as::<_, DBPost>("SELECT * FROM posts WHERE id = $1")
+            .bind(post_id)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
-    pub async fn find_by_board_and_number(&self, board_id: Uuid, post_number: i32) -> AppResult<DBPost> {
-        sqlx::query_as::<_, DBPost>(
-            "SELECT * FROM posts WHERE board_id = $1 AND post_number = $2"
-        )
-        .bind(board_id)
-        .bind(post_number)
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+    pub async fn find_by_board_and_number(
+        &self,
+        board_id: Uuid,
+        post_number: i32,
+    ) -> AppResult<DBPost> {
+        sqlx::query_as::<_, DBPost>("SELECT * FROM posts WHERE board_id = $1 AND post_number = $2")
+            .bind(board_id)
+            .bind(post_number)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn perform_action(&self, action: PostAction, post_id: Uuid) -> AppResult<()> {
@@ -223,28 +234,28 @@ impl PostRepository {
                             .bind(post_id)
                             .execute(&self.0.db)
                             .await?;
-                    },
+                    }
                     AdminAction::Unhide => {
                         tracing::info!("Admin {} is unhiding post {}", requestor.name, post_id);
                         sqlx::query("UPDATE posts SET hidden_at = NULL WHERE id = $1")
                             .bind(post_id)
                             .execute(&self.0.db)
                             .await?;
-                    },
+                    }
                     AdminAction::Sticky => {
                         tracing::info!("Admin {} is sticking post {}", requestor.name, post_id);
                         sqlx::query("UPDATE posts SET sticky = TRUE WHERE id = $1")
                             .bind(post_id)
                             .execute(&self.0.db)
                             .await?;
-                    },
+                    }
                     AdminAction::Unsticky => {
                         tracing::info!("Admin {} is unsticking post {}", requestor.name, post_id);
                         sqlx::query("UPDATE posts SET sticky = FALSE WHERE id = $1")
                             .bind(post_id)
                             .execute(&self.0.db)
                             .await?;
-                    },
+                    }
                     AdminAction::Ban { reason, duration } => {
                         let Some(ip_id) = db_post.ip_id else {
                             // If the post doesn't have an associated IP, we can't verify the user's IP
@@ -254,13 +265,21 @@ impl PostRepository {
                         let ip_repo = IpRepository::new(&self.0);
                         let post_ip = ip_repo.find_by_id(ip_id).await?;
 
-                        tracing::info!("Admin {} is banning IP {} for reason '{}' and duration {:?}", requestor.name, post_ip.ip_address, reason, duration);
-                        sqlx::query("INSERT INTO bans (ip_id, reason, duration) VALUES ($1, $2, $3)")
-                            .bind(ip_id)
-                            .bind(reason)
-                            .bind(duration)
-                            .execute(&self.0.db)
-                            .await?;
+                        tracing::info!(
+                            "Admin {} is banning IP {} for reason '{}' and duration {:?}",
+                            requestor.name,
+                            post_ip.ip_address,
+                            reason,
+                            duration
+                        );
+                        sqlx::query(
+                            "INSERT INTO bans (ip_id, reason, duration) VALUES ($1, $2, $3)",
+                        )
+                        .bind(ip_id)
+                        .bind(reason)
+                        .bind(duration)
+                        .execute(&self.0.db)
+                        .await?;
                     }
                 }
             }

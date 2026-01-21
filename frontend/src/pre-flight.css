@@ -12,6 +12,7 @@
 
   --gray-light: rgba(0, 0, 0, 0.05);
   --gray: rgba(0, 0, 0, 0.6);
+  --gray-slight-dark: rgba(0, 0, 0, 0.65);
   --gray-dark: rgba(0, 0, 0, 0.85);
   --orange-light: rgb(239, 209, 157);
 
@@ -34,6 +35,11 @@ html > * {
   font-family: var(--font-sans);
   font-size: var(--font-size-text);
   color: var(--text-primary);
+}
+
+*::selection {
+  color: var(--bg-primary);
+  background-color: var(--text-primary);
 }
 
 body {

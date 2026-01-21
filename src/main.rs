@@ -1,11 +1,12 @@
 use askama::Template;
 use axum::{
     Extension, Router,
-    extract::{Path, State},
+    extract::{Path, State, connect_info::IntoMakeServiceWithConnectInfo},
     http::StatusCode,
     response::Html,
     routing::{delete, get, post},
 };
+use axum_client_ip::ClientIp;
 use sqlx::PgPool;
 use std::net::SocketAddr;
 use tower::ServiceBuilder;
@@ -17,6 +18,7 @@ use crate::{
     config::CliAction,
     err::AppError,
     extract_session::AdminSession,
+    middleware::pretty_errors::pretty_error_codes,
     models::{
         board_categories::{BoardCategory, BoardCategoryRepository},
         boards::{Board, BoardRepository},
@@ -36,6 +38,7 @@ mod extract_session;
 mod middleware;
 mod models;
 mod pagination;
+mod parse_multipart;
 mod view_structs;
 
 #[derive(Template)]
@@ -108,7 +111,11 @@ async fn main() -> Result<(), AppError> {
     }
 }
 
-fn create_router(state: AppState) -> Router {
+async fn handler(ClientIp(ip): ClientIp) -> String {
+    ip.to_string()
+}
+
+fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, SocketAddr> {
     let admin_router = Router::new()
         .layer(Extension(AdminSession))
         .route("/login", get(controllers::admin::login_page))
@@ -164,11 +171,12 @@ fn create_router(state: AppState) -> Router {
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
         .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
-        /* .layer(axum::middleware::from_fn(
+        .layer(axum::middleware::from_fn(
             middleware::pretty_errors::pretty_error_codes,
-        )) */
+        ))
         .fallback(fallback_route)
         .with_state(state)
+        .into_make_service_with_connect_info::<SocketAddr>()
 }
 
 async fn fallback_route() -> Result<Html<String>, StatusCode> {
