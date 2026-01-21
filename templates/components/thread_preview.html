@@ -4,7 +4,7 @@
   {% if let Some(op_post) = thread_info.op_post %}
   <div class="thread">
     <div class="attachment-container">
-      <img class="attachment" src="" width="140" height="160" />
+      <img class="attachment" src="https://picsum.photos/1200/1400" width="140" height="160" />
       <span>filename.jpeg</span>
     </div>
     <div class="thread-posts">
@@ -19,8 +19,9 @@
       </div>
       {% for post in thread_info.replies %}
       <div class="post">
-        <div class="attachment-container">
-          <img class="attachment" src="" width="140" height="160" />
+        <div class="attachment-container" x-data="{height: 140, width: 160, open: false}">
+          <img class="attachment" src="https://picsum.photos/1200/1400" x-bind:width="open ? undefined : width"
+            x-on:click="open = !open" />
           <span>filename.jpeg</span>
         </div>
         <div>

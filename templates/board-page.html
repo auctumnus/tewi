@@ -8,13 +8,13 @@
 {% endblock %}
 
 {% block content_hat %}
-{% call post_form_macro::post_form("") %}
+{% call post_form_macro::post_form(form_route) %}
 {% endblock %}
 
 {% block nav %}
-<div>
+<div class="board-nav">
   {% for slug in board_slugs %}
-  <div><a href="/board/">/{{ slug }}/</a></div>
+  <div class="board-slug"><a href="/board/">/{{ slug }}/</a></div>
   {% endfor %}
 </div>
 {% endblock %}

@@ -1,6 +1,6 @@
-{% macro post_form(formRoute) %}
+{% macro post_form(form_route) %}
 <div class="post-form-container">
-  <form class="post-form" method="POST" action="{{ formRoute }}" enctype="multipart/form-data" autocomplete="off"
+  <form class="post-form" method="POST" action="{{ form_route }}" enctype="multipart/form-data" autocomplete="off"
     x-data="{ content: '', file: undefined }">
     <div class="input-group vertical">
       <label for="name-input">Name</label>

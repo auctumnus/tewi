@@ -6,16 +6,15 @@ use axum::{
     http::StatusCode,
     response::{Html, Redirect},
 };
-use serde::Deserialize;
 
 use crate::{
     AppState,
     board_info::BoardInfo,
     models::{
-        attachments::{Attachment, AttachmentRepository},
+        attachments::Attachment,
         boards::BoardRepository,
         posts::{CreatePost, PostCreationTarget, PostRepository},
-        threads::ThreadRepository,
+        threads::{AddOpTemplate, ThreadRepository},
     },
     pagination::PaginatedRequest,
     parse_multipart,
@@ -45,11 +44,11 @@ pub async fn board_page(
                 )
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-            dbg!(&threads);
             let html = (BoardPageTemplate {
                 board_name: Some(board.name),
                 board_slugs,
                 threads,
+                form_route: format!("/board/{}", board.slug),
             })
             .render()
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -104,16 +103,20 @@ pub async fn create_thread(
         Some(board) => {
             let attachments = Vec::<Attachment>::new();
 
+            println!("Desu 1");
             let mut parsed = parse_multipart::parse_multipart::<PostForm, PostForm>(multipart)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            println!("Desu 2");
 
             parsed
                 .fields
                 .insert("attachments".to_string(), "attachments".to_string());
+            println!("Desu 3");
 
             let form_fields = hashmap_to_post_form_text_fields(parsed.fields)
                 .map_err(|_| StatusCode::BAD_REQUEST)?;
+            println!("Desu 4");
 
             let op_post = post_repo
                 .create(
@@ -128,13 +131,18 @@ pub async fn create_thread(
                 )
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            println!("Desu 5");
 
             let thread = thread_repo
-                .find_by_id(op_post.thread_id)
+                .add_op(
+                    op_post.thread_id,
+                    AddOpTemplate {
+                        post_id: op_post.id,
+                    },
+                )
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-            dbg!(&op_post);
+            println!("Desu 6");
 
             return Ok(Redirect::to(
                 format!("/board/{}/thread/{}", board.slug, op_post.post_number).as_str(),
@@ -142,56 +150,70 @@ pub async fn create_thread(
         }
         None => Err(StatusCode::NOT_FOUND),
     }
-} /* 
+}
 pub async fn create_post(
-Path(path): Path<(String, String)>,
-//Query(query): Query<PaginatedRequest>,
-State(s): State<AppState>,
-//ClientIp(ip): ClientIp,
-mut multipart: Multipart,
+    BoardInfo(board, _): BoardInfo,
+    Path(path): Path<(String, String)>,
+    State(s): State<AppState>,
+    ConnectInfo(connection_info): ConnectInfo<SocketAddr>,
+    multipart: Multipart,
 ) -> Result<Redirect, StatusCode> {
-/*  let board_repo = BoardRepository::new(&s);
     let post_repo = PostRepository::new(&s);
-    let attachment_repo = AttachmentRepository::new(&s);
     let thread_repo = ThreadRepository::new(&s);
 
-    let board = board_repo
-        .find_by_slug(&path.0)
-        .await
-        .map_err(|_| StatusCode::NOT_FOUND)?;
+    match board {
+        Some(board) => {
+            let attachments = Vec::<Attachment>::new();
 
-    let thread = thread_repo
-        .find_by_board_and_number(board.id, 1)
-        .await
-        .map_err(|_| StatusCode::NOT_FOUND)?;
+            println!("Desu 1");
+            let mut parsed = parse_multipart::parse_multipart::<PostForm, PostForm>(multipart)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            println!("Desu 2");
 
-    let op_post = thread.op_post.ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+            parsed
+                .fields
+                .insert("attachments".to_string(), "attachments".to_string());
+            println!("Desu 3");
 
-    let mut attachments = Vec::<Attachment>::new();
+            let form_fields = hashmap_to_post_form_text_fields(parsed.fields)
+                .map_err(|_| StatusCode::BAD_REQUEST)?;
+            println!("Desu 4");
 
-    let post = post_repo
-        .create(
-            ip.into(),
-            CreatePost {
-                target: PostCreationTarget::Thread(thread.id),
-                title: "".to_string(),
-                name: "".to_string(),
-                content: "payload.content".to_string(),
-                attachments,
-            },
-        )
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let thread = thread_repo
+                .find_by_board_and_number(
+                    board.id,
+                    path.1
+                        .parse::<i32>()
+                        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?,
+                )
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    return Ok(Redirect::to(
-        format!(
-            "/boards/{}/thread/{}#{}",
-            board.slug, thread.op_post.post_number, post.post_number
-        )
-        .as_str(),
-    )); */
+            let post = post_repo
+                .create(
+                    connection_info.ip().into(),
+                    CreatePost {
+                        target: PostCreationTarget::Thread(thread.id),
+                        title: form_fields.title,
+                        name: form_fields.name,
+                        content: form_fields.content,
+                        attachments,
+                    },
+                )
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            println!("Desu 5");
+
+            println!("Desu 6");
+
+            return Ok(Redirect::to(
+                format!("/board/{}/thread/{}", board.slug, path.1).as_str(),
+            ));
+        }
+        None => Err(StatusCode::NOT_FOUND),
+    }
 }
- */
 
 pub async fn thread(
     BoardInfo(board, board_slugs): BoardInfo,
@@ -219,6 +241,7 @@ pub async fn thread(
                 board_name: Some(board.name),
                 board_slugs,
                 thread,
+                form_route: format!("/board/{}/thread/{}", board.slug, path.1),
             })
             .render()
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;

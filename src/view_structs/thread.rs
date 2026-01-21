@@ -8,6 +8,7 @@ pub struct ThreadTemplate {
     pub board_name: Option<String>,
     pub board_slugs: Vec<String>,
     pub thread: Thread,
+    pub form_route: String,
 }
 
 pub struct PostFormTextFields {

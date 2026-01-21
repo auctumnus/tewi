@@ -7,11 +7,12 @@ use crate::{
 };
 
 #[derive(Template)]
-#[template(path = "page.html")]
+#[template(path = "board-page.html")]
 pub struct BoardPageTemplate {
     pub board_name: Option<String>,
     pub board_slugs: Vec<String>,
     pub threads: PaginatedResponse<Thread>,
+    pub form_route: String,
 }
 
 #[derive(Deserialize)]

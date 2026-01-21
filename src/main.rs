@@ -167,6 +167,10 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
             "/board/{slug}/thread/{id}",
             get(controllers::thread::thread),
         )
+        .route(
+            "/board/{slug}/thread/{id}",
+            post(controllers::thread::create_post),
+        )
         .nest("/admin", admin_router)
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))

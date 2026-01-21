@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 use crate::models::posts::DBPost;
+use crate::view_structs::admin::edit_board::EditBoardTemplate;
 use crate::{
     AppState,
     err::AppResult,
@@ -29,6 +30,10 @@ pub struct Thread {
     pub replies: Vec<Post>, // latest n replies
 }
 
+pub struct AddOpTemplate {
+    pub post_id: Uuid,
+}
+
 pub struct ThreadRepository(AppState);
 
 impl ThreadRepository {
@@ -54,32 +59,15 @@ impl ThreadRepository {
         self.materialize(db_thread).await
     }
 
-    pub async fn edit(
-        &self,
-        thread_id: Uuid,
-        pagination: PaginatedRequest,
-        edit_board: EditBoard,
-    ) -> AppResult<Board> {
-        tracing::info!("Admin {} is editing board {}", requestor.name, board_id);
-        let current_board = self.find_by_id(board_id).await?;
-        let slug = edit_board.slug.unwrap_or(current_board.slug);
-        let name = edit_board.name.unwrap_or(current_board.name);
-        let description = edit_board.description.unwrap_or(current_board.description);
-        let category_id = match edit_board.category_id {
-            Some(category_id) => category_id,
-            None => current_board.category_id,
-        };
+    pub async fn add_op(&self, thread_id: Uuid, add_op: AddOpTemplate) -> AppResult<DBThread> {
         sqlx::query!(
-            "UPDATE boards SET slug = $1, name = $2, description = $3, category_id = $4 WHERE id = $5",
-            slug,
-            name,
-            description,
-            category_id,
-            board_id
+            "UPDATE threads SET op_post = $1 WHERE id = $2",
+            add_op.post_id,
+            thread_id
         )
         .execute(&self.0.db)
         .await?;
-        self.find_by_id(board_id).await
+        self.find_by_id(thread_id).await
     }
 
     pub async fn find_by_id(&self, thread_id: Uuid) -> AppResult<DBThread> {

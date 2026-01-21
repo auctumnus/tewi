@@ -1,8 +1,13 @@
 .page-threads {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: var(--spacing-3xl);
+  flex: 1;
+}
+
+.thread-preview {
+  display: flex;
 }
 
 .thread-preview hr {
@@ -12,8 +17,14 @@
 .thread {
   display: flex;
   gap: var(--spacing-large);
+  flex-wrap: wrap;
+  flex: 1;
 }
 
+.thread-posts {
+  flex: 1;
+  margin-top: var(--spacing-normal);
+}
 .thread-posts > div {
   margin-top: var(--spacing-normal);
 }
