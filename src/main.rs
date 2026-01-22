@@ -1,11 +1,12 @@
 use askama::Template;
 use axum::{
     Extension, Router,
-    extract::State,
+    extract::{DefaultBodyLimit, State, connect_info::IntoMakeServiceWithConnectInfo},
     http::StatusCode,
     response::Html,
     routing::{delete, get, post},
 };
+
 use sqlx::PgPool;
 use std::net::SocketAddr;
 use tower::ServiceBuilder;
@@ -29,6 +30,7 @@ mod config;
 mod controllers;
 mod err;
 mod extract_session;
+mod filters;
 mod middleware;
 mod models;
 mod pagination;
@@ -105,10 +107,9 @@ async fn main() -> Result<(), AppError> {
     }
 }
 
-fn create_router(state: AppState) -> Router {
+fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, SocketAddr> {
     let admin_router = Router::new()
         .layer(Extension(AdminSession))
-        .layer(axum::middleware::from_fn(middleware::auth::verify_auth))
         .route("/login", get(controllers::admin::login_page))
         .route("/login", post(controllers::admin::login))
         .route("/logout", post(controllers::admin::logout))
@@ -152,25 +153,36 @@ fn create_router(state: AppState) -> Router {
     Router::new()
         .layer(Extension(BoardInfo))
         .route("/", get(home))
-        .route("/board/{slug}", get(home))
-        .route("/board/{slug}/thread/{id}", get(home))
+        .route("/board/{slug}", get(controllers::thread::board_page))
+        .route(
+            "/board/{slug}",
+            post(controllers::thread::create_thread).layer(DefaultBodyLimit::max(10485760)),
+        )
+        .route(
+            "/board/{slug}/thread/{id}",
+            get(controllers::thread::thread),
+        )
+        .route(
+            "/board/{slug}/thread/{id}",
+            post(controllers::thread::create_post).layer(DefaultBodyLimit::max(10485760)),
+        )
         .nest("/admin", admin_router)
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
+        .nest_service("/uploads", ServeDir::new("uploads"))
         .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
         .layer(axum::middleware::from_fn(
             middleware::pretty_errors::pretty_error_codes,
         ))
         .fallback(fallback_route)
         .with_state(state)
+        .into_make_service_with_connect_info::<SocketAddr>()
 }
 
 async fn fallback_route() -> Result<Html<String>, StatusCode> {
-    let html = (view_structs::status::error::not_found::NotFoundTemplate {
-        board_name: "".to_string(),
-    })
-    .render()
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let html = (view_structs::status::error::not_found::NotFoundTemplate { board_name: None })
+        .render()
+        .map_err(|_| StatusCode::NOT_FOUND)?;
     Ok(Html(html))
 }
 

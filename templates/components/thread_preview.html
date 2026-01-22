@@ -1,39 +1,56 @@
 {% import "components/post.html" as post_macro %}
-{% macro thread_preview(thread_info) %}
+{% macro thread_preview(thread_info, board_slug) %}
 <div class="thread-preview">
-  <div class="thread">
+  {% if let Some(op_post) = thread_info.op_post %}
+  <div class="post" :class="{ 'image-expanded': open }" x-data="{height: 140, width: 160, open: false}">
     <div class="attachment-container">
-      <img class="attachment" src="" width="140" height="160" />
+      {% if let Some(attachment) = op_post.attachments.get(0) %}
+      <img x-data="{thumbnail:'/{{ attachment.id | thumbnail_url}}',image:'/{{ attachment.id | attachment_url}}'}"
+        class="attachment" src="/{{ attachment.id | thumbnail_url}}" x-bind:src="open ? image : thumbnail"
+        x-bind:width="open ? undefined : width" x-on:click="open = !open" />
+      <span>{{attachment.original_filename}}</span>
+      {% else %}
+      <img class="attachment" src="/assets/sad-face.png" x-bind:width="open ? undefined : width"
+        x-on:click="open = !open" />
       <span>filename.jpeg</span>
+      {% endif %}
     </div>
-    <div class="thread-posts">
-      <div>
-        <span class="trip-name">{{ thread_info.op_post.name }}</span>
-        <a class="post-number" href="{{ thread_info.op_post.post_number }}">ID.
-          {{thread_info.op_post.post_number}}</a>
-        <div class="op-title">{{ thread_info.op_post.title }}</div>
-        <div class="post-body">
-          {{ thread_info.op_post.content | linebreaks }}
-        </div>
-      </div>
-      {% for post in thread_info.posts %}
-      <div class="post">
-        <div class="attachment-container">
-          <img class="attachment" src="" width="140" height="160" />
-          <span>filename.jpeg</span>
-        </div>
-        <div>
-          <div class="post-header">
-            <span class="trip-name">{{ post.name }}</span>
-            <a class="post-number" href="{{ post.post_number }}">ID. {{post.post_number}}</a>
-            <span class="op-title">{{post.title }}</span>
-          </div>
-          <div class="post-body">{{ post.content | linebreaks }}</div>
-        </div>
-      </div>
-      {% endfor %}
+    <div class="post-header">
+      <div class="op-title">{{ op_post.title }}</div>
+      <span class="trip-name">{{ op_post.name }}</span>
+      <span class="post-date">{{ op_post.created_at }}</span>
+      <a class="post-number" href="/board/{{ board_slug }}/thread/{{ op_post.post_number }}">ID.
+        {{op_post.post_number}}</a>
     </div>
+    <div class="post-body">
+      {{ op_post.content | linebreaks }}
+    </div>
+    {% for post in thread_info.replies %}
+    <div class="post" x-data="{height: 140, width: 160, open: false}">
+      <div class="attachment-container">
+        {% if let Some(attachment) = op_post.attachments.get(0) %}
+        <img x-data="{thumbnail:'/{{ attachment.id | thumbnail_url}}',image:'/{{ attachment.id | attachment_url}}'}"
+          class="attachment" src="/{{ attachment.id | thumbnail_url}}" x-bind:src="open ? image : thumbnail"
+          x-bind:width="open ? undefined : width" x-on:click="open = !open" />
+        <span>{{attachment.original_filename}}</span>
+        {% endif %}
+      </div>
+      <div class="post-header">
+        {% let name = post.name %}
+        <span class="trip-name">{{ name | defined_or("Anonymous") }}</span>
+        <span class="post-date">{{ post.created_at }}</span>
+        <a class="post-number"
+          href="/board/{{ board_slug }}/thread/{{ op_post.post_number }}#{{ post.post_number }}">ID.
+          {{post.post_number}}</a>
+      </div>
+      <div class="post-body">{{ post.content | linebreaks }}</div>
+
+    </div>
+    {% endfor %}
   </div>
+  {% else %}
+  <div>This thread has no OP, thats weird.</div>
+  {% endif %}
   <hr />
 </div>
 {% endmacro %}

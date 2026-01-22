@@ -1,17 +1,16 @@
-use uuid::Uuid;
+use crate::{
+    AppState, config,
+    err::{AppResult, malformed},
+    models::admins::Admin,
+};
 use chrono::{DateTime, Utc};
-use crate::{AppState, config, err::{AppResult, malformed}, models::admins::Admin};
+use image::{GenericImageView, ImageFormat, ImageReader, imageops::FilterType};
 use std::io::Cursor;
-use image::{ImageFormat, ImageReader, imageops::FilterType, GenericImageView};
+use uuid::Uuid;
 
 const MAX_ATTACHMENT_SIZE: usize = 10 * 1024 * 1024; // 10 MB
 
-const SUPPORTED_MIME_TYPES: &[&str] = &[
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-];
+const SUPPORTED_MIME_TYPES: &[&str] = &["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 const THUMBNAIL_MAX_WIDTH: u32 = 300;
 const THUMBNAIL_MAX_HEIGHT: u32 = 300;
@@ -33,7 +32,7 @@ pub struct DBAttachment {
     pub original_filename: String,
     pub spoilered: bool,
 }
-
+#[derive(Debug)]
 pub struct Attachment {
     pub id: Uuid,
     pub post_id: Uuid,
@@ -65,7 +64,10 @@ impl From<DBAttachment> for Attachment {
             (Some(w), Some(h)) => Some((w as u32, h as u32)),
             _ => None,
         };
-        let thumbnail_dimensions = match (db_attachment.thumbnail_width, db_attachment.thumbnail_height) {
+        let thumbnail_dimensions = match (
+            db_attachment.thumbnail_width,
+            db_attachment.thumbnail_height,
+        ) {
             (Some(w), Some(h)) => Some((w as u32, h as u32)),
             _ => None,
         };
@@ -83,11 +85,11 @@ impl From<DBAttachment> for Attachment {
 }
 
 pub struct CreateAttachment {
-    data: Vec<u8>,
-    post_id: Uuid,
-    mime_type: String,
-    original_filename: String,
-    spoilered: bool,
+    pub data: Vec<u8>,
+    pub post_id: Uuid,
+    pub mime_type: String,
+    pub original_filename: String,
+    pub spoilered: bool,
 }
 
 pub struct AttachmentRepository(AppState);
@@ -98,13 +100,11 @@ impl AttachmentRepository {
     }
 
     pub async fn create(&self, create_attachment: CreateAttachment) -> AppResult<Attachment> {
-
         if create_attachment.data.len() > MAX_ATTACHMENT_SIZE {
             return Err(malformed("Attachment size exceeds the maximum allowed"));
         }
 
-        let image = ImageReader::new(Cursor::new(&create_attachment.data))
-            .with_guessed_format()?;
+        let image = ImageReader::new(Cursor::new(&create_attachment.data)).with_guessed_format()?;
 
         let guessed_format = image.format();
         let mime_type = ImageFormat::from_mime_type(&create_attachment.mime_type);
@@ -122,9 +122,12 @@ impl AttachmentRepository {
 
         let dimensions = image.dimensions();
 
-        let thumbnail = image.resize(THUMBNAIL_MAX_WIDTH, THUMBNAIL_MAX_HEIGHT, FilterType::Gaussian);
+        let thumbnail = image.resize(
+            THUMBNAIL_MAX_WIDTH,
+            THUMBNAIL_MAX_HEIGHT,
+            FilterType::Gaussian,
+        );
         let thumbnail_dimensions = thumbnail.dimensions();
-
 
         let mut tx = self.0.db.begin().await?;
 
@@ -167,46 +170,39 @@ impl AttachmentRepository {
     }
 
     pub async fn find_by_post_id(&self, post_id: Uuid) -> AppResult<Vec<Attachment>> {
-        sqlx::query!(
-            "SELECT * FROM attachments WHERE post_id = $1",
-            post_id
-        )
-        .fetch_all(&self.0.db)
-        .await
-        .map(|rows| {
-            rows.into_iter().map(|row| DBAttachment {
-                id: row.id,
-                post_id: row.post_id,
-                mime_type: row.mime_type,
-                size: row.size as i64,
-                width: row.width.map(|w| w as i64),
-                height: row.height.map(|h| h as i64),
-                thumbnail_width: row.thumbnail_width.map(|w| w as i64),
-                thumbnail_height: row.thumbnail_height.map(|h| h as i64),
-                original_filename: row.original_filename,
-                spoilered: row.spoilered,
-            }).collect::<Vec<_>>()
-        })
-        .map(|db_attachments| db_attachments.into_iter().map(Attachment::from).collect())
-        .map_err(Into::into)
+        sqlx::query!("SELECT * FROM attachments WHERE post_id = $1", post_id)
+            .fetch_all(&self.0.db)
+            .await
+            .map(|rows| {
+                rows.into_iter()
+                    .map(|row| DBAttachment {
+                        id: row.id,
+                        post_id: row.post_id,
+                        mime_type: row.mime_type,
+                        size: row.size as i64,
+                        width: row.width.map(|w| w as i64),
+                        height: row.height.map(|h| h as i64),
+                        thumbnail_width: row.thumbnail_width.map(|w| w as i64),
+                        thumbnail_height: row.thumbnail_height.map(|h| h as i64),
+                        original_filename: row.original_filename,
+                        spoilered: row.spoilered,
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .map(|db_attachments| db_attachments.into_iter().map(Attachment::from).collect())
+            .map_err(Into::into)
     }
 
     pub async fn delete(&self, requestor: Admin, attachment_id: Uuid) -> AppResult<()> {
         let mut tx = self.0.db.begin().await?;
 
-        let attachment = sqlx::query!(
-            "SELECT * FROM attachments WHERE id = $1",
-            attachment_id
-        )
-        .fetch_one(&mut *tx)
-        .await?;
+        let attachment = sqlx::query!("SELECT * FROM attachments WHERE id = $1", attachment_id)
+            .fetch_one(&mut *tx)
+            .await?;
 
-        sqlx::query!(
-            "DELETE FROM attachments WHERE id = $1",
-            attachment_id
-        )
-        .execute(&mut *tx)
-        .await?;
+        sqlx::query!("DELETE FROM attachments WHERE id = $1", attachment_id)
+            .execute(&mut *tx)
+            .await?;
 
         tx.commit().await?;
 

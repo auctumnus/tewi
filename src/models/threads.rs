@@ -1,8 +1,13 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::{AppState, err::AppResult, models::posts::{Post, PostRepository}, pagination::{PaginatedRequest, PaginatedResponse}};
 use crate::models::posts::DBPost;
+use crate::{
+    AppState,
+    err::AppResult,
+    models::posts::{Post, PostRepository},
+    pagination::{PaginatedRequest, PaginatedResponse},
+};
 
 #[derive(sqlx::FromRow)]
 pub struct DBThread {
@@ -13,7 +18,7 @@ pub struct DBThread {
     pub created_at: DateTime<Utc>,
     pub stickied_at: Option<DateTime<Utc>>,
 }
-
+#[derive(Debug)]
 pub struct Thread {
     pub id: Uuid,
     pub board_id: Option<Uuid>,
@@ -22,6 +27,10 @@ pub struct Thread {
     pub created_at: DateTime<Utc>,
     pub stickied_at: Option<DateTime<Utc>>,
     pub replies: Vec<Post>, // latest n replies
+}
+
+pub struct AddOpTemplate {
+    pub post_id: Uuid,
 }
 
 pub struct ThreadRepository(AppState);
@@ -49,18 +58,29 @@ impl ThreadRepository {
         self.materialize(db_thread).await
     }
 
-    pub async fn find_by_id(&self, thread_id: Uuid) -> AppResult<DBThread> {
-        sqlx::query_as!(
-            DBThread,
-            "SELECT * FROM threads WHERE id = $1",
+    pub async fn add_op(&self, thread_id: Uuid, add_op: AddOpTemplate) -> AppResult<DBThread> {
+        sqlx::query!(
+            "UPDATE threads SET op_post = $1 WHERE id = $2",
+            add_op.post_id,
             thread_id
         )
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        .execute(&self.0.db)
+        .await?;
+        self.find_by_id(thread_id).await
     }
 
-    pub async fn find_by_board_and_number(&self, board_id: Uuid, op_post_number: i32) -> AppResult<DBThread> {
+    pub async fn find_by_id(&self, thread_id: Uuid) -> AppResult<DBThread> {
+        sqlx::query_as!(DBThread, "SELECT * FROM threads WHERE id = $1", thread_id)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn find_by_board_and_number(
+        &self,
+        board_id: Uuid,
+        op_post_number: i32,
+    ) -> AppResult<DBThread> {
         sqlx::query_as!(
             DBThread,
             "SELECT * FROM threads WHERE board_id = $1 AND op_post = (SELECT id FROM posts WHERE board_id = $1 AND post_number = $2)",
@@ -72,7 +92,11 @@ impl ThreadRepository {
         .map_err(Into::into)
     }
 
-    pub async fn posts_for_thread(&self, thread_id: Uuid, pagination: PaginatedRequest) -> AppResult<PaginatedResponse<Post>> {
+    pub async fn posts_for_thread(
+        &self,
+        thread_id: Uuid,
+        pagination: PaginatedRequest,
+    ) -> AppResult<PaginatedResponse<Post>> {
         let db_posts = sqlx::query_as!(
             DBPost,
             r#"SELECT
@@ -88,12 +112,11 @@ impl ThreadRepository {
         )
         .fetch_all(&self.0.db)
         .await?;
-        let total = sqlx::query_scalar!(
-            "SELECT COUNT(*) FROM posts WHERE thread_id = $1",
-            thread_id
-        )
-        .fetch_one(&self.0.db)
-        .await?.unwrap_or(0);
+        let total =
+            sqlx::query_scalar!("SELECT COUNT(*) FROM posts WHERE thread_id = $1", thread_id)
+                .fetch_one(&self.0.db)
+                .await?
+                .unwrap_or(0);
 
         let post_repo = PostRepository::new(&self.0);
         let mut posts = Vec::with_capacity(db_posts.len());
@@ -117,7 +140,30 @@ impl ThreadRepository {
         } else {
             None
         };
-        let replies = self.posts_for_thread(db_thread.id, PaginatedRequest { offset: 0, limit: 5 }).await?.items;
+        let replies: Vec<Post> = self
+            .posts_for_thread(
+                db_thread.id,
+                PaginatedRequest {
+                    offset: 0,
+                    limit: 5,
+                },
+            )
+            .await?
+            .items
+            .into_iter()
+            .filter_map(|reply| {
+                return match &op_post {
+                    Some(op_post) => {
+                        if reply.id != op_post.id {
+                            return Some(reply);
+                        } else {
+                            return None;
+                        }
+                    }
+                    None => None,
+                };
+            })
+            .collect();
         Ok(Thread {
             id: db_thread.id,
             board_id: db_thread.board_id,

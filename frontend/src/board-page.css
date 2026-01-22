@@ -1,0 +1,13 @@
+.board-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-threads {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--spacing-3xl);
+  flex: 1;
+}

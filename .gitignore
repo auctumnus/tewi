@@ -38,3 +38,6 @@ Thumbs.db
 
 postgres_data
 .direnv
+
+# Runtime artifacts
+uploads/

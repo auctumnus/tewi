@@ -12,18 +12,61 @@
 
   --gray-light: rgba(0, 0, 0, 0.05);
   --gray: rgba(0, 0, 0, 0.6);
+  --gray-slight-dark: rgba(0, 0, 0, 0.65);
   --gray-dark: rgba(0, 0, 0, 0.85);
   --orange-light: rgb(239, 209, 157);
+  --blue: rgb(153, 170, 214);
+  --green-light: rgb(178, 205, 153);
+  --green: rgb(152, 182, 124);
 
   --bg-primary: var(--orange-light);
   --bg-secondary: var(--gray-light);
   --text-primary: var(--gray);
+  --text-secondary: var(--blue);
+  --text-tertiary: var(--green);
 
   --font-sans: "SF Pro Text", sans-serif;
+  --font-mono: "Fira Code", mono;
 
   --font-size-caption: 1rem;
   --font-size-text: 1.3rem;
   --font-size-sub-title: 2.2rem;
+}
+
+@media (max-width: 1800px) {
+  :root {
+    --width-container-info: 480px;
+    --width-container-narrow: 640px;
+    --width-container: 1260px;
+  }
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --width-container-info: 480px;
+    --width-container-narrow: 640px;
+    --width-container: 1080px;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --width-container-info: 480px;
+    --width-container-narrow: 640px;
+    --width-container: 640px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --width-container-info: 480px;
+    --width-container-narrow: 640px;
+    --width-container: 640px;
+  }
+}
+/* required by aplinejs x-cloak pseudo directive  - https://alpinejs.dev/directives/cloak */
+[x-cloak] {
+  display: none !important;
 }
 
 html {
@@ -34,6 +77,11 @@ html > * {
   font-family: var(--font-sans);
   font-size: var(--font-size-text);
   color: var(--text-primary);
+}
+
+*::selection {
+  color: var(--bg-primary);
+  background-color: var(--text-primary);
 }
 
 body {
@@ -54,4 +102,45 @@ hr {
 
 input {
   min-width: unset;
+}
+
+ul {
+  padding: 0;
+  margin: 0;
+}
+
+ul li {
+  list-style-type: none;
+}
+
+@property --link-gradient-point-1 {
+  syntax: "<percentage>";
+  initial-value: 5%;
+  inherits: false;
+}
+
+@property --link-gradient-point-2 {
+  syntax: "<percentage>";
+  initial-value: 5%;
+  inherits: false;
+}
+
+a {
+  text-decoration: none;
+  transition:
+    color 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    --link-gradient-point-1 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    --link-gradient-point-2 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background-image: linear-gradient(
+    to top,
+    black var(--link-gradient-point-2),
+    transparent var(--link-gradient-point-1)
+  );
+  color: black;
+}
+
+a:hover {
+  --link-gradient-point-1: 100%;
+  --link-gradient-point-2: 100%;
+  color: var(--bg-primary);
 }

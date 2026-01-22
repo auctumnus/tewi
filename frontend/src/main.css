@@ -5,30 +5,52 @@
 @import url(login.css);
 @import url(post-form.css);
 @import url(post.css);
-@import url(thread.css);
+@import url(board-page.css);
 
 .header {
   padding: var(--spacing-normal) var(--spacing-large);
+  margin-bottom: var(--spacing-4xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-extra-large);
+}
+
+.header nav {
+  display: flex;
+  gap: var(--spacing-extra-large);
+  justify-content: center;
+}
+
+.header nav :first-child {
+  align-self: flex-start;
+}
+
+.board-nav {
+  flex: 1;
+  display: flex;
+  gap: var(--spacing-extra-large);
+  justify-content: center;
 }
 
 .content {
   display: flex;
   flex-direction: column;
+  margin-bottom: var(--spacing-4xl);
 }
 
 .container-info {
   width: 100%;
-  max-width: 480px;
+  max-width: var(--width-container-info);
 }
 
 .container-narrow {
   width: 100%;
-  max-width: 640px;
+  max-width: var(--width-container-narrow);
 }
 
 .container {
   width: 100%;
-  max-width: 1280px;
+  max-width: var(--width-container);
 }
 
 main.page {
@@ -37,7 +59,9 @@ main.page {
   justify-content: center;
 }
 
-.input-group {
+.input-group > input:required + label ::after,
+.input-group > textarea:required + label::after {
+  content: "*";
 }
 
 .input-group.horizontal {
@@ -48,6 +72,7 @@ main.page {
 }
 .input-group.vertical {
   display: flex;
-  flex-direction: column;
+  /* column reverse so that we can abuse sibling selectors to deal with input dependant label styling */
+  flex-direction: column-reverse;
   gap: var(--spacing-small);
 }

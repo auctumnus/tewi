@@ -1,10 +1,25 @@
-{% macro post_form(formRoute) %}
-<div class="post-form-container">
-  <form class="post-form" method="POST" action="{{ formRoute }}" enctype="multipart/form-data">
-    <input type="text" name="title" />
-    <input type="file" name="attachment" />
-    <textarea name="content"></textarea>
-    <button type="submit">Submit</button>
+{% macro post_form(form_route) %}
+<div class="post-form-container" x-data="{showForm: false}">
+  <span class="show-post-form" @click="showForm = true" x-show="!showForm">Show post form</span>
+  <form x-cloak x-show="showForm" class="post-form" method="POST" action="{{ form_route }}"
+    enctype="multipart/form-data" autocomplete="off" x-data="{ content: '', file: undefined }">
+    <div class="input-group vertical">
+      <input type="text" name="name" id="name-input" autocomplete="off" />
+      <label for="name-input">Name</label>
+    </div>
+    <div class="input-group vertical">
+      <input type="text" name="title" id="title-input" autocomplete="off" />
+      <label for="title-input">Title</label>
+    </div>
+    <div class="input-group vertical">
+      <input type="file" name="attachments" id="attachments-input" autocomplete="off" required />
+      <label for="attachments-input">Attachments</label>
+    </div>
+    <div class="input-group vertical">
+      <textarea name="content" id="content-input" autocomplete="off" x-model="content" required></textarea>
+      <label for="content-input">Content</label>
+    </div>
+    <button type="submit" x-bind:disabled="content.length <= 0" x-effect="console.log(content.length)">Submit</button>
   </form>
 </div>
 {% endmacro %}

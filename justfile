@@ -4,7 +4,7 @@ dev:
   concurrently --names 後,前 "just dev-backend" "just dev-frontend"
 
 dev-backend:
-  watchexec -w templates -w src -r cargo run
+  watchexec -w templates -w src -r cargo run -- --attachments-folder uploads/attachments --thumbnails-folder uploads/thumbnails
 
 dev-frontend:
   cd frontend && bun run dev

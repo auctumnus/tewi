@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% import "components/thread_preview.html" as thread_template %}
+{% import "components/post-form.html" as post_form_macro %}
+
+{% block title %}tewi - {% endblock %}
+{% block head %}
+<script src="/static/home.js"></script>
+{% endblock %}
+
+{% block content_hat %}
+{% call post_form_macro::post_form(form_route) %}
+{% endcall %}
+{% endblock %}
+
+{% block nav %}
+<div class="board-nav">
+  {% for slug in board_slugs %}
+  <div class="board-slug"><a href="/board/">/{{ slug }}/</a></div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block content %}
+<main class="board-page">
+  <div class="container">
+    <div class="page-threads">
+      {% for thread_info in threads.items %}
+      {% call thread_template::thread_preview(thread_info, board.slug) %}
+      {% endcall %}
+      {% endfor %}
+    </div>
+  </div>
+</main>
+{% endblock %}
