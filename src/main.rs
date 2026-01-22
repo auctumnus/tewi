@@ -13,6 +13,7 @@ use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
+    board_info::BoardInfo,
     config::CliAction,
     err::AppError,
     extract_session::AdminSession,
@@ -23,6 +24,7 @@ use crate::{
 };
 
 mod auth;
+mod board_info;
 mod config;
 mod controllers;
 mod err;
@@ -147,6 +149,7 @@ fn create_router(state: AppState) -> Router {
         );
 
     Router::new()
+        .layer(Extension(BoardInfo))
         .route("/", get(home))
         .route("/board/{slug}", get(home))
         .route("/board/{slug}/thread/{id}", get(home))
