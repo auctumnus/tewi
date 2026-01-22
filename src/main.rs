@@ -32,6 +32,7 @@ mod extract_session;
 mod middleware;
 mod models;
 mod pagination;
+mod parse_multipart;
 mod view_structs;
 
 #[derive(Template)]
