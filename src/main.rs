@@ -158,6 +158,9 @@ fn create_router(state: AppState) -> Router {
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
         .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
+        .layer(axum::middleware::from_fn(
+            middleware::pretty_errors::pretty_error_codes,
+        ))
         .fallback(fallback_route)
         .with_state(state)
 }
