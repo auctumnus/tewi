@@ -73,6 +73,12 @@ html {
   font-size: 16px;
 }
 
+@media (max-width: 1800px) {
+  html {
+    font-size: 14px;
+  }
+}
+
 html * {
   font-family: var(--font-sans);
   font-size: var(--font-size-text);
@@ -94,10 +100,11 @@ body {
 hr {
   background: rgba(0, 0, 0, 0.6);
   border: 0;
-  height: 1px;
+  height: 0px;
   display: block;
   margin-top: 0rem;
   margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.6);
 }
 
 input {
