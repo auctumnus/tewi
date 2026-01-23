@@ -41,8 +41,8 @@ pub struct Post {
     pub attachments: Vec<Attachment>,
 
     pub post_number: i32,
-    pub title: String,
-    pub name: String,
+    pub title: Option<String>,
+    pub name: Option<String>,
     pub content: String,
 
     pub created_at: DateTime<Utc>,
@@ -168,8 +168,14 @@ impl PostRepository {
             associated_ban_id: db_post.associated_ban_id,
             attachments,
             post_number: db_post.post_number,
-            title: db_post.title,
-            name: db_post.name,
+            title: match db_post.title.eq("") {
+                true => None,
+                false => Some(db_post.title),
+            },
+            name: match db_post.name.eq("") {
+                true => None,
+                false => Some(db_post.name),
+            },
             content: db_post.content,
             created_at: db_post.created_at,
             hidden_at: db_post.hidden_at,
