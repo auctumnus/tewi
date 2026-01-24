@@ -8,8 +8,10 @@
       <img x-data="{thumbnail:'/{{ attachment.id | thumbnail_url}}',image:'/{{ attachment.id | attachment_url}}'}"
         class="attachment" src="/{{ attachment.id | thumbnail_url}}" x-bind:src="open ? image : thumbnail"
         x-bind:width="open ? undefined : width" x-on:click="open = !open" />
-      <a class="filename" href="/{{ attachment.id | attachment_url}}"
-        aria-describedby="{{ op_post.post_number }}-filename">{{attachment.original_filename}}</a>
+      <div style="overflow-x: hidden; text-overflow: ellipsis;">
+        <a class="filename" href="/{{ attachment.id | attachment_url}}"
+          aria-describedby="{{ op_post.post_number }}-filename">{{attachment.original_filename}}</a>
+      </div>
       {% else %}
       <img class="attachment" src="/assets/sad-face.png" x-bind:width="open ? undefined : width"
         x-on:click="open = !open" />
