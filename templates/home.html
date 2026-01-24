@@ -1,24 +1,52 @@
-{% extends "layout.html" %}
-{% block title %}tewi - Home{% endblock %}
-{% block head %}
-<script src="/static/home.js"></script>
-{% endblock %}
-{% block content %}
-<main class="home">
-  <div class="container-narrow board-index">
-    {% for category in categories %}
-    <div class="board-category">
-      <span>{{ category.name }}</span>
-      <hr />
-      <ul>
-        {% for board in boards %}
-        <li class="board-list-entry">
-          <a href="/board/{{ board.slug }}">{{ board.name }}</a>
-        </li>
-        {% endfor %}
-      </ul>
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}tewi - Home{% endblock %}</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="/static/inter.css" />
+  <link rel="stylesheet" href="/static/main.css" />
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <div class="header">
+    <div class="container">
+      <div class="site-branding-container">
+        <div class="site-branding">
+          <a href="/" class="site-logo-main">
+            <h1 aria-hidden="true">^-^</h1>
+          </a>
+          <a href="/" class="site-logo-text">
+            <span id="header-ascii-label">tewi</span>
+          </a>
+        </div>
+      </div>
     </div>
-    {% endfor %}
   </div>
-</main>
-{% endblock %}
+  <div class="content">
+    <main class="home">
+      <div class="container-narrow board-index">
+        {% for category in categories %}
+        <div class="board-category">
+          <span>{{ category.name }}</span>
+          <hr />
+          <ul>
+            {% for board in boards %}
+            <li class="board-list-entry">
+              <a href="/board/{{ board.slug }}">{{ board.name }}</a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+    </main>
+  </div>
+  <!-- load last scripts -->
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

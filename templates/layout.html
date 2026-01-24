@@ -14,11 +14,25 @@
 <body>
   <div class="header">
     <nav>
-      <a href="/">Home</a>
       {% block nav %}{% endblock %}
     </nav>
-    <div class="content-hat">
-      {% block content_hat %}{% endblock %}
+    <div class="container">
+      <div class="site-branding-container">
+        <div class="site-branding">
+          <a href="/" class="site-logo-main">
+            <h1 aria-hidden="true">^-^</h1>
+          </a>
+          <a href="/" class="site-logo-text">
+            <span id="header-ascii-label">tewi</span>
+          </a>
+        </div>
+      </div>
+      <div class="board-info-container">
+        <span class="board-info">{% block board_info %}{% endblock %}</span>
+      </div>
+      <div class="content-hat">
+        {% block content_hat %}{% endblock %}
+      </div>
     </div>
   </div>
 

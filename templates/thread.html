@@ -2,10 +2,23 @@
 
 {% import "components/thread_preview.html" as thread_template %}
 {% import "components/post-form.html" as post_form_macro %}
-{% block title %}tewi - {% endblock %}
+{% block title %}/{{ board.slug }}/ - {{ board.name }}{% endblock %}
 {% block head %}
 <script src="/static/home.js"></script>
 {% endblock %}
+
+{% block nav %}
+<div class="board-nav">
+  {% for slug in board_slugs %}
+  <div class="board-slug"><a href="/board/{{ slug }}">/{{ slug }}/</a></div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block board_info %}
+/{{ board.slug }}/ - {{ board.name }}
+{% endblock %}
+
 
 {% block content_hat %}
 {% call post_form_macro::post_form(form_route) %}
