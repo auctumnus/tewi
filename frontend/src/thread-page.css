@@ -1,0 +1,5 @@
+main.thread-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

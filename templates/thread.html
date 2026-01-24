@@ -21,16 +21,17 @@
 
 
 {% block content_hat %}
-{% call post_form_macro::post_form(form_route) %}
+{% call post_form_macro::post_form(form_route, "post") %}
 {% endcall %}
 {% endblock %}
 
 {% block content %}
-<main class="page">
-  <div class="page-threads">
-    {% call thread_template::thread_preview(thread, board.slug) %}
-    {% endcall %}
-  </div>
+<main class="thread-page">
+  <div class="container">
+    <div class="tread-content">
+      {% call thread_template::thread_preview(thread, board.slug) %}
+      {% endcall %}
+    </div>
   </div>
 </main>
 {% endblock %}
