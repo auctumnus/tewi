@@ -1,6 +1,6 @@
-{% macro post_form(form_route) %}
+{% macro post_form(form_route, type="post") %}
 <div class="post-form-container" x-data="{showForm: false}">
-  <span class="show-post-form" @click="showForm = true" x-show="!showForm">Show post form</span>
+  <span class="show-post-form" @click="showForm = true" x-show="!showForm">Start a New Thread</span>
   <form x-cloak x-show="showForm" class="post-form" method="POST" action="{{ form_route }}"
     enctype="multipart/form-data" autocomplete="off" x-data="{ content: '', file: undefined }">
     <div class="input-group vertical">
