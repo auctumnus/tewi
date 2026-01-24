@@ -2,12 +2,13 @@ use uuid::Uuid;
 
 use crate::{AppState, err::AppResult, models::{admins::Admin, boards::Board}};
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct DBBoardCategory {
     pub id: Uuid,
     pub name: String,
 }
 
+#[derive(Debug)]
 pub struct BoardCategory {
     pub id: Uuid,
     pub name: String,
@@ -38,6 +39,17 @@ impl BoardCategoryRepository {
         self.find_by_id(category_id).await
     }
 
+    pub async fn find_by_name(&self, name: &str) -> AppResult<Option<DBBoardCategory>> {
+        let category = sqlx::query_as!(
+            DBBoardCategory,
+            "SELECT * FROM board_categories WHERE name = $1",
+            name
+        )
+        .fetch_optional(&self.0.db)
+        .await?;
+        Ok(category)
+    }
+
     pub async fn edit(&self, requestor: Admin, category_id: Uuid, edit_category: EditBoardCategory) -> AppResult<DBBoardCategory> {
         tracing::info!("Admin {} is editing board category {}", requestor.name, category_id);
         let current_category = self.find_by_id(category_id).await?;
@@ -60,6 +72,14 @@ impl BoardCategoryRepository {
         )
         .execute(&self.0.db)
         .await?;
+        Ok(())
+    }
+
+    pub async fn delete_by_name(&self, requestor: Admin, name: &str) -> AppResult<()> {
+        tracing::info!("Admin {} is deleting board category {}", requestor.name, name);
+        sqlx::query!("DELETE FROM board_categories WHERE name = $1", name)
+            .execute(&self.0.db)
+            .await?;
         Ok(())
     }
 

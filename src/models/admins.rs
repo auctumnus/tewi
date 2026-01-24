@@ -62,4 +62,26 @@ impl AdminRepository {
         .await?;
         Ok(())
     }
+
+    pub async fn change_password(&self, name: &str, new_password: &str) -> AppResult<()> {
+        let new_password_hash = hash(new_password)?;
+        sqlx::query!(
+            "UPDATE admins SET password_hash = $1 WHERE name = $2",
+            new_password_hash,
+            name
+        )
+        .execute(&self.0.db)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn list_all(&self) -> AppResult<Vec<Admin>> {
+        let admins = sqlx::query_as!(
+            Admin,
+            "SELECT * FROM admins ORDER BY created_at DESC"
+        )
+        .fetch_all(&self.0.db)
+        .await?;
+        Ok(admins)
+    }
 }

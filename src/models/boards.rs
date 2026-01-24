@@ -10,7 +10,7 @@ use crate::{
     pagination::{PaginatedRequest, PaginatedResponse},
 };
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, Debug)]
 pub struct Board {
     pub id: Uuid,
     pub slug: String,
@@ -136,6 +136,14 @@ impl BoardRepository {
         .fetch_one(&self.0.db)
         .await?;
         Ok(next_post_number)
+    }
+
+    pub async fn delete_by_name(&self, requestor: Admin, name: &str) -> AppResult<()> {
+        tracing::info!("Admin {} is deleting board {}", requestor.name, name);
+        sqlx::query!("DELETE FROM boards WHERE name = $1", name)
+            .execute(&self.0.db)
+            .await?;
+        Ok(())
     }
 
     pub async fn threads_for_board(

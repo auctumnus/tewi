@@ -8,6 +8,7 @@ use axum::{
 };
 
 use sqlx::PgPool;
+use uuid::Uuid;
 use std::net::SocketAddr;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
@@ -15,12 +16,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
     board_info::BoardInfo,
-    config::CliAction,
+    config::{AdminCommand, BoardCategoryCommand, BoardCommand, CliAction},
     err::AppError,
     extract_session::AdminSession,
     models::{
-        board_categories::{BoardCategory, BoardCategoryRepository},
-        boards::{Board, BoardRepository},
+        admins::Admin, board_categories::{BoardCategory, BoardCategoryRepository}, boards::{Board, BoardRepository, CreateBoard}
     },
 };
 
@@ -72,6 +72,13 @@ async fn main() -> Result<(), AppError> {
 
     let state = AppState { db: pool };
 
+    let fake_admin = Admin {
+        id: Uuid::nil(),
+        name: "cli".to_string(),
+        password_hash: "".to_string(),
+        created_at: chrono::Utc::now(),
+    };
+
     match cli.action.unwrap_or(CliAction::Serve) {
         CliAction::Serve => {
             let addr = SocketAddr::from(([127, 0, 0, 1], cli.port));
@@ -84,18 +91,110 @@ async fn main() -> Result<(), AppError> {
 
             Ok(())
         }
-        CliAction::NewAdmin { name, password } => {
-            let repo = models::admins::AdminRepository::new(&state);
-            let admin = repo.create(&name, &password).await?;
-            println!("Created admin: {:?}", admin);
-            Ok(())
-        }
-        CliAction::DeleteAdmin { name } => {
-            let repo = models::admins::AdminRepository::new(&state);
-            repo.delete_by_name(&name).await?;
-            println!("Deleted admin: {}", name);
-            Ok(())
-        }
+        CliAction::Admin(admin_command) => match admin_command {
+            AdminCommand::List => {
+                let repo = models::admins::AdminRepository::new(&state);
+                let admins = repo.list_all().await?;
+                for admin in admins {
+                    println!("Admin: {:?}", admin);
+                }
+                Ok(())
+            }
+            AdminCommand::New { name, password } => {
+                let repo = models::admins::AdminRepository::new(&state);
+                let admin = repo.create(&name, &password).await?;
+                println!("Created admin: {:?}", admin);
+                Ok(())
+            }
+            AdminCommand::Delete { name } => {
+                let repo = models::admins::AdminRepository::new(&state);
+                repo.delete_by_name(&name).await?;
+                println!("Deleted admin: {}", name);
+                Ok(())
+            }
+            AdminCommand::ChangePassword { name, new_password } => {
+                let repo = models::admins::AdminRepository::new(&state);
+                repo.change_password(&name, &new_password).await?;
+                println!("Changed password for admin: {}", name);
+                Ok(())
+            }
+        },
+        CliAction::Board(board_command) => match board_command {
+            BoardCommand::New { name, slug, description, category } => {
+                let repo = models::boards::BoardRepository::new(&state);
+                let category_id = if let Some(cat_name) = &category {
+                    let category_repo = models::board_categories::BoardCategoryRepository::new(&state);
+                    if let Some(cat) = category_repo.find_by_name(cat_name).await? {
+                        Some(cat.id)
+                    } else {
+                        println!("Category '{}' not found", cat_name);
+                        return Ok(());
+                    }
+                } else {
+                    None
+                };
+                let create = CreateBoard {
+                    name,
+                    description,
+                    slug,
+                    category_id,
+                };
+                let board = repo.create(fake_admin, create).await?;
+                println!("Created board: {:?}", board);
+                Ok(())
+            }
+            BoardCommand::List => {
+                let repo = models::boards::BoardRepository::new(&state);
+                let boards = repo.list_all().await?;
+                if boards.is_empty() {
+                    println!("No boards found.");
+                    return Ok(());
+                }
+                let category_repo = models::board_categories::BoardCategoryRepository::new(&state);
+                for board in boards {
+                    println!("Board: {:?}", board);
+                    if let Some(category_id) = board.category_id &&
+                        let Ok(category) = category_repo.find_by_id(category_id).await {
+                            println!("  Category: {:?}", category);
+                        
+                    }
+                }
+                Ok(())
+            }
+            BoardCommand::Delete { name } => {
+                let repo = models::boards::BoardRepository::new(&state);
+                repo.delete_by_name(fake_admin, &name).await?;
+                println!("Deleted board: {}", name);
+                Ok(())
+            }
+        },
+        CliAction::Category(category_command) => match category_command {
+            BoardCategoryCommand::New { name } => {
+                let repo = models::board_categories::BoardCategoryRepository::new(&state);
+                let category = repo.create(fake_admin, name).await?;
+                println!("Created category: {:?}", category);
+                Ok(())
+            }
+            BoardCategoryCommand::List => {
+                let repo = models::board_categories::BoardCategoryRepository::new(&state);
+                let categories = repo.list_all().await?;
+                if categories.is_empty() {
+                    println!("No categories found.");
+                    return Ok(());
+                }
+                for category in categories {
+                    println!("Category: {:?}", category);
+                }
+                Ok(())
+            }
+            BoardCategoryCommand::Delete { name } => {
+                let repo = models::board_categories::BoardCategoryRepository::new(&state);
+
+                repo.delete_by_name(fake_admin, &name).await?;
+                println!("Deleted category: {}", name);
+                Ok(())
+            }
+        },
         CliAction::Clean => {
             println!("Clearing expired sessions...");
             let sessions = models::sessions::SessionRepository::new(&state);
