@@ -227,6 +227,7 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
             "/boards/board/{slug}/delete",
             post(controllers::admin::delete_board),
         )
+        .route("/bans", get(controllers::admin::bans))
         .route("/categories", get(controllers::admin::categories))
         .route(
             "/categories/create",

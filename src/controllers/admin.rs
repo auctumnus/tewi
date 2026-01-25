@@ -13,6 +13,7 @@ use crate::{
     AppState,
     extract_session::{self, AdminSession},
     models::{
+        bans::BanRepository,
         board_categories::{BoardCategoryRepository, EditBoardCategory},
         boards::{BoardRepository, CreateBoard, EditBoard},
         sessions::SessionRepository,
@@ -376,6 +377,36 @@ pub async fn delete_category(
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             Ok(Redirect::to("/admin/categories"))
+        }
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+
+pub async fn bans(
+    AdminSession(admin_session): AdminSession,
+    State(s): State<AppState>,
+) -> Result<Html<String>, StatusCode> {
+    match admin_session {
+        Some(_) => {
+            let ban_repo = BanRepository::new(&s);
+            let raw_bans = ban_repo
+                .list_all()
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            let mut bans = Vec::with_capacity(raw_bans.len());
+            for ban in raw_bans {
+                let entry = ban_repo
+                    .materialize(ban)
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                bans.push(entry);
+            }
+
+            let html = (view_structs::admin::bans::BansTemplate { bans })
+                .render()
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            Ok(Html(html))
         }
         None => Err(StatusCode::UNAUTHORIZED),
     }

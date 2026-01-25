@@ -1,3 +1,4 @@
+pub mod bans;
 pub mod boards;
 pub mod categories;
 pub mod create_board;
