@@ -1,0 +1,49 @@
+{% extends "admin/layout.html" %}
+{% block title %}tewi - New Attachment Policy{% endblock %}
+{% block content %}
+<main class="create-attachment-policy">
+  <div>
+    <div>
+      <span href="">New Attachment Policy</span>
+    </div>
+  </div>
+  <div class="container">
+    {% if let Some(error) = validation %}
+    <div class="admin-from-error">
+      <span class="admin-form-error-text">{{ error }}</span>
+    </div>
+    {% endif %}
+    <form class="create-attachment-policy-form" method="post">
+      <div class="input-group horizontal">
+        <label for="enable-spoilers-input">Board</label>
+        <select name="board" autocomplete="off">
+          <option selected disabled>Select a Board</option>
+          {% for board in boards %}
+          <option value="{{ board.id }}">{{ board.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="input-group horizontal">
+        <label>Mime Types</label>
+        <div class="mime-type-list">
+          {% for mime in supported_mime_types %}
+          <div class="mime-type-item">
+            <label for="mime-type-input">{{ mime }}</label>
+            <input type="checkbox" name="mime-types" id="mime-type-input" value="{{ mime }}" autocomplete="off" />
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="input-group horizontal">
+        <label for="size-limit-input">Size Limit (Bytes)</label>
+        <input type="text" name="size-limit" id="size-limit-input" autocomplete="off" />
+      </div>
+      <div class="input-group horizontal">
+        <label for="enable-spoilers-input">Enable Spoilers</label>
+        <input type="checkbox" name="enable-spoilers" id="enable-spoilers-input" autocomplete="off" value="true" />
+      </div>
+      <button type="submit" class="create-category-button">Save</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

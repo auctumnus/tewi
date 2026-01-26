@@ -1,8 +1,11 @@
+pub mod attachment_policies;
 pub mod bans;
 pub mod boards;
 pub mod categories;
+pub mod create_attachment_policy;
 pub mod create_board;
 pub mod create_category;
+pub mod edit_attachment_policy;
 pub mod edit_board;
 pub mod edit_category;
 pub mod login;

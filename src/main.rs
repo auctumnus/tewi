@@ -245,6 +245,30 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
         .route(
             "/categories/category/{id}/delete",
             get(controllers::admin::delete_category),
+        )
+        .route(
+            "/attachment-policies",
+            get(controllers::admin::attachment_policies),
+        )
+        .route(
+            "/attachment-policies/create",
+            get(controllers::admin::show_create_attachment_policies),
+        )
+        .route(
+            "/attachment-policies/create",
+            post(controllers::admin::create_attachment_policies),
+        )
+        .route(
+            "/attachment-policies/policy/{id}",
+            get(controllers::admin::show_edit_attachment_policies),
+        )
+        .route(
+            "/attachment-policies/policy/{id}/edit",
+            post(controllers::admin::edit_attachment_policies),
+        )
+        .route(
+            "/attachment-policies/policy/{id}/delete",
+            get(controllers::admin::delete_attachment_policies),
         );
 
     Router::new()

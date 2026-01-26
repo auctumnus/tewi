@@ -11,8 +11,13 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
+    err::{AppError, AppResult},
     extract_session::{self, AdminSession},
     models::{
+        attachment_policies::{
+            AttachmentPolicy, AttachmentPolicyRepository, CreateAttachmentPolicy,
+            EditAttachmentPolicy, SUPPORTED_MIME_TYPES,
+        },
         bans::BanRepository,
         board_categories::{BoardCategoryRepository, EditBoardCategory},
         boards::{BoardRepository, CreateBoard, EditBoard},
@@ -409,5 +414,188 @@ pub async fn bans(
             Ok(Html(html))
         }
         None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+
+pub async fn attachment_policies(
+    AdminSession(admin_session): AdminSession,
+    State(s): State<AppState>,
+) -> Result<Html<String>, StatusCode> {
+    match admin_session {
+        Some(_) => {
+            let attachment_policy_repo = AttachmentPolicyRepository::new(&s);
+            let policies = attachment_policy_repo
+                .list_all()
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            let mut policies_materialized = Vec::<AttachmentPolicy>::new();
+            for policy in policies {
+                let asdf = attachment_policy_repo.materialize(policy).await;
+                match asdf {
+                    Ok(asdf) => policies_materialized.push(asdf),
+                    Err(_) => continue,
+                };
+            }
+            let html = (view_structs::admin::attachment_policies::AttachmentPoliciesTemplate {
+                attachment_policies: policies_materialized,
+            })
+            .render()
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            Ok(Html(html))
+        }
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+pub async fn show_create_attachment_policies(
+    AdminSession(admin_session): AdminSession,
+    State(s): State<AppState>,
+) -> Result<Html<String>, StatusCode> {
+    match admin_session {
+        Some(_) => {
+            let board_repository = BoardRepository::new(&s);
+            let boards = board_repository
+                .list_all()
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            let html =
+                (view_structs::admin::create_attachment_policy::CreateAttachmentPolicyTemplate {
+                    validation: None,
+                    boards: boards,
+                    supported_mime_types: SUPPORTED_MIME_TYPES
+                        .iter()
+                        .map(|mime| mime.to_string())
+                        .collect(),
+                })
+                .render()
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            Ok(Html(html))
+        }
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+pub async fn create_attachment_policies(
+    AdminSession(admin_session): AdminSession,
+    State(s): State<AppState>,
+    axum_extra::extract::Form(payload): axum_extra::extract::Form<
+        view_structs::admin::create_attachment_policy::AttachmentPoliciesForm,
+    >,
+) -> AppResult<Redirect> {
+    match admin_session {
+        Some((_, admin)) => {
+            let board_repo = BoardRepository::new(&s);
+            let board = board_repo.find_by_id(payload.board).await?;
+            let policy_repo = AttachmentPolicyRepository::new(&s);
+
+            policy_repo
+                .create(
+                    admin,
+                    CreateAttachmentPolicy {
+                        board_id: board.id,
+                        mime_types: payload.mime_types,
+                        enable_spoilers: payload.enable_spoilers,
+                        size_limit: payload.size_limit,
+                    },
+                )
+                .await?;
+
+            Ok(Redirect::to("/admin/attachment-policies"))
+        }
+        None => Err(AppError {
+            message: "Not an admin".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        }),
+    }
+}
+pub async fn show_edit_attachment_policies(
+    AdminSession(admin_session): AdminSession,
+    State(s): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> AppResult<Html<String>> {
+    match admin_session {
+        Some(_) => {
+            let board_repository = BoardRepository::new(&s);
+            let boards = board_repository.list_all().await?;
+
+            let policy_repo = AttachmentPolicyRepository::new(&s);
+            let policy = policy_repo.find_by_id(id).await?;
+            let policy = policy_repo.materialize(policy).await?;
+
+            let html =
+                (view_structs::admin::edit_attachment_policy::EditAttachmentPolicyTemplate {
+                    validation: None,
+                    policy,
+                    boards,
+                    supported_mime_types: SUPPORTED_MIME_TYPES
+                        .iter()
+                        .map(|mime| mime.to_string())
+                        .collect(),
+                })
+                .render()
+                .map_err(|_| AppError {
+                    message: "Rendering Error".to_string(),
+                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                })?;
+            Ok(Html(html))
+        }
+        None => Err(AppError {
+            message: "Not an admin".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        }),
+    }
+}
+pub async fn edit_attachment_policies(
+    AdminSession(admin_session): AdminSession,
+    State(s): State<AppState>,
+    Path(id): Path<Uuid>,
+    axum_extra::extract::Form(payload): axum_extra::extract::Form<
+        view_structs::admin::edit_attachment_policy::AttachmentPoliciesForm,
+    >,
+) -> AppResult<Redirect> {
+    match admin_session {
+        Some((_, admin)) => {
+            let policy_repo = AttachmentPolicyRepository::new(&s);
+            let policy = policy_repo.find_by_id(id).await?;
+
+            policy_repo
+                .edit(
+                    admin,
+                    policy.id,
+                    EditAttachmentPolicy {
+                        board_id: None,
+                        mime_types: Some(payload.mime_types),
+                        enable_spoilers: payload.enable_spoilers.or(Some(false)),
+                        size_limit: Some(payload.size_limit),
+                    },
+                )
+                .await?;
+
+            Ok(Redirect::to("/admin/attachment-policies"))
+        }
+        None => Err(AppError {
+            message: "Not an admin".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        }),
+    }
+}
+pub async fn delete_attachment_policies(
+    AdminSession(admin_session): AdminSession,
+    State(s): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> AppResult<Redirect> {
+    match admin_session {
+        Some((_, admin)) => {
+            let policy_repo = AttachmentPolicyRepository::new(&s);
+            let policy = policy_repo.find_by_id(id).await?;
+
+            policy_repo.delete(admin, policy.id).await?;
+
+            Ok(Redirect::to("/admin/attachment-policies"))
+        }
+        None => Err(AppError {
+            message: "Not an admin".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        }),
     }
 }

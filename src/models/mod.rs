@@ -1,4 +1,5 @@
 pub mod admins;
+pub mod attachment_policies;
 pub mod attachments;
 pub mod bans;
 pub mod board_categories;

@@ -1,0 +1,49 @@
+{% extends "admin/layout.html" %}
+{% block title %}tewi - New Attachment Policy{% endblock %}
+{% block content %}
+<main class="create-attachment-policy">
+  <div>
+    <div>
+      <span href="">New Attachment Policy</span>
+    </div>
+  </div>
+  <div class="container">
+    {% if let Some(error) = validation %}
+    <div class="admin-from-error">
+      <span class="admin-form-error-text">{{ error }}</span>
+    </div>
+    {% endif %}
+    <form class="create-attachment-policy-form" method="post"
+      action="/admin/attachment-policies/policy/{{ policy.id }}/edit">
+      <div class="input-group horizontal">
+        <label for="enable-spoilers-input">Board</label>
+        <select name="board" autocomplete="off" disabled>
+          <option value="{{ policy.board.id }}" selected>{{ policy.board.name }}</option>
+        </select>
+      </div>
+      <div class="input-group horizontal">
+        <label>Mime Types</label>
+        <div class="mime-type-list">
+          {% for mime in supported_mime_types %}
+          <div class="mime-type-item">
+            <label for="mime-type-input">{{ mime }}</label>
+            <input type="checkbox" name="mime-types" id="mime-type-input" value="{{ mime }}" autocomplete="off" {% if
+              policy.mime_types.contains(mime) %} checked {% endif %} />
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="input-group horizontal">
+        <label for="size-limit-input">Size Limit (Bytes)</label>
+        <input type="text" name="size-limit" id="size-limit-input" autocomplete="off" value="{{ policy.size_limit }}" />
+      </div>
+      <div class="input-group horizontal">
+        <label for="enable-spoilers-input">Enable Spoilers</label>
+        <input type="checkbox" name="enable-spoilers" id="enable-spoilers-input" autocomplete="off" value="true" {% if
+          policy.enable_spoilers %} checked {% endif %} />
+      </div>
+      <button type="submit" class="create-category-button">Save</button>
+    </form>
+  </div>
+</main>
+{% endblock %}

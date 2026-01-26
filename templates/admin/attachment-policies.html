@@ -1,0 +1,33 @@
+{% extends "admin/layout.html" %}
+{% block title %}tewi - Attachment Policies{% endblock %}
+{% block content %}
+<main class="admin-attachment-policies">
+  <div class="admin-list-header">
+    <div>
+      <a href="/admin/attachment-policies/create">New Attachment Policy</a>
+    </div>
+  </div>
+  <div class="admin-list">
+    {% for policy in attachment_policies %}
+    <div class="admin-list-element">
+      <div>{{ policy.board.name }}</div>
+      <div>{{ policy.mime_types.join(", ") }}</div>
+      <div>{{ policy.size_limit }}</div>
+      <div>{{ policy.enable_spoilers }}</div>
+
+      <div class="board-actions">
+        <a href="/admin/attachment-policies/policy/{{ policy.id }}/delete">Delete</a>
+        <a href="/admin/attachment-policies/policy/{{ policy.id }}">Edit</a>
+      </div>
+    </div>
+    {% else %}
+    <div class="admin-list-element" style="justify-content: center;">
+      <div>
+        No Attachment Policies
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  </div>
+</main>
+{% endblock %}
