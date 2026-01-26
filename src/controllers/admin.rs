@@ -159,7 +159,7 @@ pub async fn create_board(
 
 pub async fn view_board(
     State(s): State<AppState>,
-    Path(path): Path<String>,
+    Path(path): Path<Uuid>,
     AdminSession(admin_session): AdminSession,
 ) -> Result<Html<String>, StatusCode> {
     match admin_session {
@@ -167,7 +167,7 @@ pub async fn view_board(
             let board_repo = BoardRepository::new(&s);
             let category_repo = BoardCategoryRepository::new(&s);
 
-            if let Ok(board) = board_repo.find_by_slug(&path).await {
+            if let Ok(board) = board_repo.find_by_id(path).await {
                 let categories = category_repo
                     .list_all()
                     .await
@@ -192,7 +192,7 @@ pub async fn view_board(
 }
 pub async fn update_board(
     State(s): State<AppState>,
-    Path(path): Path<String>,
+    Path(path): Path<Uuid>,
     AdminSession(admin_session): AdminSession,
     Form(payload): Form<view_structs::admin::edit_board::EditBoardForm>,
 ) -> Result<Redirect, StatusCode> {
@@ -202,7 +202,7 @@ pub async fn update_board(
             let category_repo = BoardCategoryRepository::new(&s);
 
             let board = board_repo
-                .find_by_slug(&path)
+                .find_by_id(path)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

@@ -12,7 +12,7 @@
     </div>
     {% endif %}
     {% if let Some(category) = category_info %}
-    <form class="edit-category-form" method="post" action="/admin/categories/edit/{{ category.id }}">
+    <form class="edit-category-form" method="post" action="/admin/categories/category/{{ category.id }}/edit">
       <div class="input-group horizontal">
         <label for="name-input">Name</label>
         <input type="text" id="name-input" name="name" value="{{ category.name }}" />

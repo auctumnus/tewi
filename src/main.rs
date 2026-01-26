@@ -218,14 +218,11 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
             get(controllers::admin::display_create_board),
         )
         .route("/boards/create", post(controllers::admin::create_board))
-        .route("/boards/board/{slug}", get(controllers::admin::view_board))
+        .route("/boards/board/{id}", get(controllers::admin::view_board))
+        .route("/boards/board/{id}", post(controllers::admin::update_board))
         .route(
-            "/boards/board/{slug}",
-            post(controllers::admin::update_board),
-        )
-        .route(
-            "/boards/board/{slug}/delete",
-            post(controllers::admin::delete_board),
+            "/boards/board/{id}/delete",
+            get(controllers::admin::delete_board),
         )
         .route("/bans", get(controllers::admin::bans))
         .route("/categories", get(controllers::admin::categories))
@@ -242,12 +239,12 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
             get(controllers::admin::view_category),
         )
         .route(
-            "/categories/edit/{id}",
+            "/categories/category/{id}/edit",
             post(controllers::admin::update_category),
         )
         .route(
-            "/categories/delete/{id}",
-            delete(controllers::admin::delete_category),
+            "/categories/category/{id}/delete",
+            get(controllers::admin::delete_category),
         );
 
     Router::new()
