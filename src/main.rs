@@ -4,15 +4,15 @@ use axum::{
     extract::{DefaultBodyLimit, State, connect_info::IntoMakeServiceWithConnectInfo},
     http::StatusCode,
     response::Html,
-    routing::{delete, get, post},
+    routing::{get, post},
 };
 
 use sqlx::PgPool;
-use uuid::Uuid;
 use std::net::SocketAddr;
 use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, services::ServeDir};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use uuid::Uuid;
 
 use crate::{
     board_info::BoardInfo,
@@ -20,7 +20,9 @@ use crate::{
     err::AppError,
     extract_session::AdminSession,
     models::{
-        admins::Admin, board_categories::{BoardCategory, BoardCategoryRepository}, boards::{Board, BoardRepository, CreateBoard}
+        admins::Admin,
+        board_categories::{BoardCategory, BoardCategoryRepository},
+        boards::{Board, BoardRepository, CreateBoard},
     },
 };
 
@@ -120,10 +122,16 @@ async fn main() -> Result<(), AppError> {
             }
         },
         CliAction::Board(board_command) => match board_command {
-            BoardCommand::New { name, slug, description, category } => {
+            BoardCommand::New {
+                name,
+                slug,
+                description,
+                category,
+            } => {
                 let repo = models::boards::BoardRepository::new(&state);
                 let category_id = if let Some(cat_name) = &category {
-                    let category_repo = models::board_categories::BoardCategoryRepository::new(&state);
+                    let category_repo =
+                        models::board_categories::BoardCategoryRepository::new(&state);
                     if let Some(cat) = category_repo.find_by_name(cat_name).await? {
                         Some(cat.id)
                     } else {
@@ -153,10 +161,10 @@ async fn main() -> Result<(), AppError> {
                 let category_repo = models::board_categories::BoardCategoryRepository::new(&state);
                 for board in boards {
                     println!("Board: {:?}", board);
-                    if let Some(category_id) = board.category_id &&
-                        let Ok(category) = category_repo.find_by_id(category_id).await {
-                            println!("  Category: {:?}", category);
-                        
+                    if let Some(category_id) = board.category_id
+                        && let Ok(category) = category_repo.find_by_id(category_id).await
+                    {
+                        println!("  Category: {:?}", category);
                     }
                 }
                 Ok(())
