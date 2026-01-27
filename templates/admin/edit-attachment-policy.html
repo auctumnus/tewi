@@ -13,7 +13,7 @@
       <span class="admin-form-error-text">{{ error }}</span>
     </div>
     {% endif %}
-    <form class="create-attachment-policy-form" method="post"
+    <form class="admin-form" id="create-attachment-policy-form" method="post"
       action="/admin/attachment-policies/policy/{{ policy.id }}/edit">
       <div class="input-group horizontal">
         <label for="enable-spoilers-input">Board</label>

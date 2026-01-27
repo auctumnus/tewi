@@ -9,19 +9,20 @@
   </div>
   <div class="admin-list">
     {% for policy in attachment_policies %}
-    <div class="admin-list-element">
-      <div>{{ policy.board.name }}</div>
-      <div>{{ policy.mime_types.join(", ") }}</div>
-      <div>{{ policy.size_limit }}</div>
-      <div>{{ policy.enable_spoilers }}</div>
-
-      <div class="board-actions">
+    <div class="admin-list-item">
+      <div class="admin-list-item-details">
+        <span>{{ policy.board.name }}</span>
+        <span>{{ policy.mime_types.join(", ") }}</span>
+        <span>{{ policy.size_limit }}</span>
+        <span>{{ policy.enable_spoilers }}</span>
+      </div>
+      <div class="admin-list-item-details-actions">
         <a href="/admin/attachment-policies/policy/{{ policy.id }}/delete">Delete</a>
         <a href="/admin/attachment-policies/policy/{{ policy.id }}">Edit</a>
       </div>
     </div>
     {% else %}
-    <div class="admin-list-element" style="justify-content: center;">
+    <div class="admin-list-item" style="justify-content: center;">
       <div>
         No Attachment Policies
       </div>

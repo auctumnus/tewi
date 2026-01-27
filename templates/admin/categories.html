@@ -10,20 +10,22 @@
     <span class="quick-action-error-text">{{ error.message }}</span>
   </div>
   {% endif %}
-  <div>
+  <div class="admin-list-header">
     <a href="/admin/categories/create">New Category</a>
   </div>
   <div class="admin-list">
     {% for category in categories %}
-    <div class="admin-list-element">
-      <div class="board-details">
-        <span class="board-name">{{ category.name }}</span>
+    <div class="admin-list-item">
+      <div class="admin-list-item-details">
+        <span class="category-name">{{ category.name }}</span>
       </div>
-      <div class="board-actions">
+      <div class="admin-list-item-details-actions">
         <a href="/admin/categories/category/{{ category.id }}/delete">Delete</a>
         <a href="/admin/categories/category/{{ category.id }}">Edit</a>
       </div>
     </div>
+    {% else %}
+    <div class="admin-list-empty">No board categories</div>
     {% endfor %}
   </div>
 </main>
