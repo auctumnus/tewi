@@ -1,5 +1,7 @@
 use axum::{http::StatusCode, response::{IntoResponse, Response}};
 
+use crate::parse_multipart::MultipartParseError;
+
 #[derive(Debug, Clone)]
 pub struct AppError {
     pub message: String,
@@ -50,6 +52,15 @@ impl From<image::ImageError> for AppError {
     }
 }
 
+impl From<MultipartParseError> for AppError {
+    fn from(value: MultipartParseError) -> Self {
+        AppError {
+            message: format!("Multipart parse error: {:?}", value),
+            status_code: StatusCode::BAD_REQUEST,
+        }
+    }
+}
+
 pub type AppResult<T> = Result<T, AppError>;
 
 pub fn internal_error(message: &str) -> AppError {
@@ -87,6 +98,13 @@ pub fn invalid_credentials() -> AppError {
 }
 
 pub fn malformed(message: &str) -> AppError {
+    AppError {
+        message: message.to_string(),
+        status_code: StatusCode::BAD_REQUEST,
+    }
+}
+
+pub fn bad_request(message: &str) -> AppError {
     AppError {
         message: message.to_string(),
         status_code: StatusCode::BAD_REQUEST,

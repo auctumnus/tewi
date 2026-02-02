@@ -26,7 +26,16 @@
   grid-column-end: 3;
   grid-row: 2;
   padding-left: var(--spacing-large);
+
+  blockquote {
+    margin-left: 0px;
+    color: var(--green);
+    &:before {
+      content: ">";
+    }
+  }
 }
+
 .post-body > p {
   margin-top: 0px;
 }
@@ -109,6 +118,7 @@
 
 .thread-preview {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
 }
 

@@ -2,56 +2,12 @@
 {% macro thread_preview(thread_info, board_slug) %}
 <div class="thread-preview">
   {% if let Some(op_post) = thread_info.op_post %}
-  <div class="post" :class="{ 'image-expanded': open }" x-data="{height: 140, width: 160, open: false}">
-    <div class="attachment-container">
-      {% if let Some(attachment) = op_post.attachments.get(0) %}
-      <img x-data="{thumbnail:'/{{ attachment.id | thumbnail_url}}',image:'/{{ attachment.id | attachment_url}}'}"
-        class="attachment" src="/{{ attachment.id | thumbnail_url}}" x-bind:src="open ? image : thumbnail"
-        x-bind:width="open ? undefined : width" x-on:click="open = !open" />
-      <div style="overflow-x: hidden; text-overflow: ellipsis;">
-        <a class="filename" href="/{{ attachment.id | attachment_url}}"
-          aria-describedby="{{ op_post.post_number }}-filename">{{attachment.original_filename}}</a>
-      </div>
-      {% else %}
-      <img class="attachment" src="/assets/sad-face.png" x-bind:width="open ? undefined : width"
-        x-on:click="open = !open" />
-      <span>No attachment</span>
-      {% endif %}
-    </div>
-    <div class="post-header">
-      <div class="op-title">{{ op_post.title| assigned_or("") }}</div>
-      <span class="trip-name">{{ op_post.name | assigned_or("Anonymous")}}</span>
-      <span class="post-date">{{ op_post.created_at }}</span>
-      <a class="post-number" href="/board/{{ board_slug }}/thread/{{ op_post.post_number }}">ID.
-        {{op_post.post_number}}</a>
-    </div>
-    <div class="post-body">
-      {{ op_post.content | linebreaks }}
-    </div>
-    {% for post in thread_info.replies %}
-    <div class="post-container">
-      <div class="post" :class="{ 'image-expanded': open }" x-data="{height: 140, width: 160, open: false}">
-        <div class="attachment-container">
-          {% if let Some(attachment) = post.attachments.get(0) %}
-          <img x-data="{thumbnail:'/{{ attachment.id | thumbnail_url}}',image:'/{{ attachment.id | attachment_url}}'}"
-            class="attachment" src="/{{ attachment.id | thumbnail_url}}" x-bind:src="open ? image : thumbnail"
-            x-bind:width="open ? undefined : width" x-on:click="open = !open" />
-          <a class="filename" href="/{{ attachment.id | attachment_url}}">{{attachment.original_filename}}</a>
-          {% endif %}
-        </div>
-        <div class="post-header">
-          {% let name = post.name %}
-          <span class="trip-name">{{ name | assigned_or("Anonymous") }}</span>
-          <span class="post-date">{{ post.created_at }}</span>
-          <a class="post-number"
-            href="/board/{{ board_slug }}/thread/{{ op_post.post_number }}#{{ post.post_number }}">ID.
-            {{post.post_number}}</a>
-        </div>
-        <div class="post-body">{{ post.content | linebreaks }}</div>
-      </div>
-    </div>
-    {% endfor %}
+  {{ post_macro::post(post=op_post, board_slug=board_slug, op_post_number=op_post.post_number, is_op=true) }}
+  {% for post in thread_info.replies %}
+  <div class="post-container">
+    {{ post_macro::post(post=post, board_slug=board_slug, op_post_number=op_post.post_number) }}
   </div>
+  {% endfor %}
   {% else %}
   <div>This thread has no OP, thats weird.</div>
   {% endif %}

@@ -23,3 +23,5 @@ clap = { version = "4.5.54", features = ["derive"] }
 axum-extra = { version = "0.12.5", features = ["cookie", "form"] }
 image = "0.25.9"
 axum-client-ip = "1.1.3"
+markdown-it = "0.6.1"
+ammonia = "4.1.2"

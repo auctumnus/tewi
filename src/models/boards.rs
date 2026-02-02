@@ -128,12 +128,12 @@ impl BoardRepository {
             .map(|boards| boards.iter().map(|board| board.slug.clone()).collect());
     }
 
-    pub async fn increment_next_post_number(&self, board_id: Uuid) -> AppResult<i32> {
+    pub async fn increment_next_post_number(&self, board_id: Uuid, tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> AppResult<i32> {
         let next_post_number = sqlx::query_scalar!(
             "UPDATE boards SET next_post_number = next_post_number + 1 WHERE id = $1 RETURNING next_post_number",
             board_id
         )
-        .fetch_one(&self.0.db)
+        .fetch_one(&mut **tx)
         .await?;
         Ok(next_post_number)
     }

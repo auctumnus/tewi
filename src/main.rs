@@ -20,9 +20,7 @@ use crate::{
     err::AppError,
     extract_session::AdminSession,
     models::{
-        admins::Admin,
-        board_categories::{BoardCategory, BoardCategoryRepository},
-        boards::{Board, BoardRepository, CreateBoard},
+        admins::Admin, attachments::{attachment_path, thumbnail_path}, board_categories::{BoardCategory, BoardCategoryRepository}, boards::{Board, BoardRepository, CreateBoard}
     },
 };
 
@@ -32,12 +30,13 @@ mod config;
 mod controllers;
 mod err;
 mod extract_session;
-mod filters;
 mod middleware;
 mod models;
 mod pagination;
 mod parse_multipart;
 mod view_structs;
+pub mod util;
+mod markup;
 
 #[derive(Template)]
 #[template(path = "home.html")]

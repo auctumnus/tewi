@@ -3,7 +3,6 @@ use crate::{
     err::{AppResult, malformed},
     models::admins::Admin,
 };
-use chrono::{DateTime, Utc};
 use image::{GenericImageView, ImageFormat, ImageReader, imageops::FilterType};
 use std::io::Cursor;
 use uuid::Uuid;
@@ -44,14 +43,14 @@ pub struct Attachment {
     pub spoilered: bool,
 }
 
-pub fn attachment_path(id: Uuid) -> std::path::PathBuf {
+pub fn attachment_path(id: &Uuid) -> std::path::PathBuf {
     let config = &config::CONFIG;
     let id_str = id.to_string();
     let (prefix, _) = id_str.split_at(2);
     config.attachments_folder.join(prefix).join(id_str)
 }
 
-pub fn thumbnail_path(id: Uuid) -> std::path::PathBuf {
+pub fn thumbnail_path(id: &Uuid) -> std::path::PathBuf {
     let config = &config::CONFIG;
     let id_str = id.to_string();
     let (prefix, _) = id_str.split_at(2);
@@ -99,7 +98,7 @@ impl AttachmentRepository {
         Self(state.clone())
     }
 
-    pub async fn create(&self, create_attachment: CreateAttachment) -> AppResult<Attachment> {
+    pub async fn create(&self, create_attachment: CreateAttachment, tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> AppResult<Attachment> {
         if create_attachment.data.len() > MAX_ATTACHMENT_SIZE {
             return Err(malformed("Attachment size exceeds the maximum allowed"));
         }
@@ -129,8 +128,6 @@ impl AttachmentRepository {
         );
         let thumbnail_dimensions = thumbnail.dimensions();
 
-        let mut tx = self.0.db.begin().await?;
-
         let id = sqlx::query_scalar!(
             "INSERT INTO attachments (post_id, mime_type, size, width, height, thumbnail_width, thumbnail_height, original_filename, spoilered) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
             create_attachment.post_id,
@@ -143,19 +140,17 @@ impl AttachmentRepository {
             create_attachment.original_filename,
             create_attachment.spoilered
         )
-        .fetch_one(&mut *tx)
+        .fetch_one(&mut **tx)
         .await?;
 
-        let attachment_path = attachment_path(id);
-        let thumbnail_path = thumbnail_path(id);
+        let attachment_path = attachment_path(&id);
+        let thumbnail_path = thumbnail_path(&id);
 
         tokio::fs::create_dir_all(attachment_path.parent().unwrap()).await?;
         tokio::fs::create_dir_all(thumbnail_path.parent().unwrap()).await?;
 
         tokio::fs::write(&attachment_path, &create_attachment.data).await?;
         thumbnail.save_with_format(&thumbnail_path, ImageFormat::WebP)?;
-
-        tx.commit().await?;
 
         Ok(Attachment {
             id,
@@ -194,9 +189,10 @@ impl AttachmentRepository {
     }
 
     pub async fn delete(&self, requestor: Admin, attachment_id: Uuid) -> AppResult<()> {
+        tracing::info!("Admin {} is deleting attachment {}", requestor.name, attachment_id);
         let mut tx = self.0.db.begin().await?;
 
-        let attachment = sqlx::query!("SELECT * FROM attachments WHERE id = $1", attachment_id)
+        sqlx::query!("SELECT * FROM attachments WHERE id = $1", attachment_id)
             .fetch_one(&mut *tx)
             .await?;
 

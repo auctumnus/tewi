@@ -48,7 +48,7 @@ impl MultipartFormField {
     }
 }
 
-async fn read_chunks_until_done<'a>(mut field: Field<'a>) -> Result<Bytes, MultipartError> {
+pub async fn read_chunks_until_done<'a>(mut field: Field<'a>) -> Result<Bytes, MultipartError> {
     let mut chunks = Vec::<u8>::new();
     while let Some(chunk) = field.chunk().await? {
         chunks = [chunks, chunk.to_vec()].concat();
@@ -78,11 +78,23 @@ pub async fn parse_multipart(
                     .ok_or(MultipartParseError::AxumError)?
                     .to_string();
                 let filename = filename.clone();
+                if filename.is_empty() {
+                    println!("Empty filename for field {}", name);
+                    continue;
+                }
                 let content_type = content_type.to_string();
+                if content_type.is_empty() {
+                    println!("Empty content type for field {}", name);
+                    continue;
+                }
 
                 let data = read_chunks_until_done(field)
                     .await
                     .map_err(|_| MultipartParseError::ValueError)?;
+                if data.is_empty() {
+                    println!("Empty file data for field {}", name);
+                    continue;
+                }
 
                 fields.insert(
                     name.clone(),

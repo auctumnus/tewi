@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::{AppState, auth::{hash, verify}, err::{AppResult, invalid_credentials}, models::admins::AdminRepository};
+use crate::{AppState, auth::verify, err::{AppResult, invalid_credentials}, models::admins::AdminRepository};
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct Session {

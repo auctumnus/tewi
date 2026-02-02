@@ -40,9 +40,10 @@ impl ThreadRepository {
         Self(state.clone())
     }
 
-    pub async fn create(&self, board_id: Option<Uuid>, op_post: Option<Post>) -> AppResult<Thread> {
-        let thread_id = sqlx::query_scalar!(
-            "INSERT INTO threads (id, board_id, op_post, last_post_at, created_at, stickied_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+    pub async fn create(&self, board_id: Option<Uuid>, op_post: Option<Post>, tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> AppResult<DBThread> {
+        sqlx::query_as!(
+            DBThread,
+            "INSERT INTO threads (id, board_id, op_post, last_post_at, created_at, stickied_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
             Uuid::new_v4(),
             board_id,
             op_post.as_ref().map(|p| p.id),
@@ -50,23 +51,21 @@ impl ThreadRepository {
             Utc::now(),
             None::<DateTime<Utc>>
         )
-        .fetch_one(&self.0.db)
-        .await?;
-
-        // Fetch the newly created thread
-        let db_thread = self.find_by_id(thread_id).await?;
-        self.materialize(db_thread).await
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(Into::into)
     }
 
-    pub async fn add_op(&self, thread_id: Uuid, add_op: AddOpTemplate) -> AppResult<DBThread> {
-        sqlx::query!(
-            "UPDATE threads SET op_post = $1 WHERE id = $2",
+    pub async fn add_op(&self, thread_id: Uuid, add_op: AddOpTemplate, tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> AppResult<DBThread> {
+        sqlx::query_as!(
+            DBThread,
+            "UPDATE threads SET op_post = $1 WHERE id = $2 returning *",
             add_op.post_id,
             thread_id
         )
-        .execute(&self.0.db)
-        .await?;
-        self.find_by_id(thread_id).await
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(Into::into)
     }
 
     pub async fn find_by_id(&self, thread_id: Uuid) -> AppResult<DBThread> {
@@ -83,9 +82,20 @@ impl ThreadRepository {
     ) -> AppResult<DBThread> {
         sqlx::query_as!(
             DBThread,
-            "SELECT * FROM threads WHERE board_id = $1 AND op_post = (SELECT id FROM posts WHERE board_id = $1 AND post_number = $2)",
+            "SELECT t.* FROM threads t WHERE t.board_id = $1 AND t.op_post = (SELECT p.id FROM posts p JOIN threads th ON p.thread_id = th.id WHERE th.board_id = $1 AND p.post_number = $2)",
             board_id,
             op_post_number
+        )
+        .fetch_one(&self.0.db)
+        .await
+        .map_err(Into::into)
+    }
+
+    pub async fn find_thread_for_post(&self, post_id: Uuid) -> AppResult<DBThread> {
+        sqlx::query_as!(
+            DBThread,
+            "SELECT t.* FROM threads t JOIN posts p ON t.id = p.thread_id WHERE p.id = $1",
+            post_id
         )
         .fetch_one(&self.0.db)
         .await
@@ -140,6 +150,9 @@ impl ThreadRepository {
         } else {
             None
         };
+
+        println!("Materializing thread {}", db_thread.id); // --- IGNORE ---
+
         let replies: Vec<Post> = self
             .posts_for_thread(
                 db_thread.id,
