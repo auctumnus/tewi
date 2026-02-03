@@ -1,40 +1,38 @@
 {% extends "layout.html" %}
-
 {% import "components/thread_preview.html" as thread_template %}
 {% import "components/post-form.html" as post_form_macro %}
 
 {% block title %}/{{ board.slug }}/ - {{ board.name }}{% endblock %}
 {% block head %}
-<script src="/static/home.js"></script>
+  <script src="/static/home.js"></script>
 {% endblock %}
 
 {% block nav %}
-<div class="board-nav">
-  {% for slug in board_slugs %}
-  <div class="board-slug"><a href="/board/{{ slug }}">/{{ slug }}/</a></div>
-  {% endfor %}
-</div>
+  <div class="board-nav">
+    {% for slug in board_slugs %}
+      <div class="board-slug"><a href="/board/{{ slug }}">/{{ slug }}/</a></div>
+    {% endfor %}
+  </div>
 {% endblock %}
 
 {% block board_info %}
-/{{ board.slug }}/ - {{ board.name }}
+  /{{ board.slug }}/ - {{ board.name }}
 {% endblock %}
 
 {% block content_hat %}
-{% call post_form_macro::post_form(form_route, "thread") %}
-{% endcall %}
+  {% call post_form_macro::post_form(form_route, "thread") %}
+  {% endcall %}
 {% endblock %}
 
-
 {% block content %}
-<main class="board-page">
-  <div class="container">
-    <div class="page-threads">
-      {% for thread_info in threads.items %}
-      {% call thread_template::thread_preview(thread_info, board.slug) %}
-      {% endcall %}
-      {% endfor %}
+  <main class="board-page">
+    <div class="container">
+      <div class="page-threads">
+        {% for thread_info in threads.items %}
+          {% call thread_template::thread_preview(thread_info, board.slug) %}
+          {% endcall %}
+        {% endfor %}
+      </div>
     </div>
-  </div>
-</main>
+  </main>
 {% endblock %}

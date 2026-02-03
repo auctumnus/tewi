@@ -1,16 +1,16 @@
 {% import "components/post.html" as post_macro %}
 {% macro thread_preview(thread_info, board_slug) %}
-<div class="thread-preview">
-  {% if let Some(op_post) = thread_info.op_post %}
-  {{ post_macro::post(post=op_post, board_slug=board_slug, op_post_number=op_post.post_number, is_op=true) }}
-  {% for post in thread_info.replies %}
-  <div class="post-container">
-    {{ post_macro::post(post=post, board_slug=board_slug, op_post_number=op_post.post_number) }}
+  <div class="thread-preview">
+    {% if let Some(op_post) = thread_info.op_post %}
+      {{ post_macro::post(post=op_post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session, is_op=true) }}
+      {% for post in thread_info.replies %}
+        <div class="post-container">
+          {{ post_macro::post(post=post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session) }}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div>This thread has no OP, thats weird.</div>
+    {% endif %}
+    <hr />
   </div>
-  {% endfor %}
-  {% else %}
-  <div>This thread has no OP, thats weird.</div>
-  {% endif %}
-  <hr />
-</div>
 {% endmacro %}

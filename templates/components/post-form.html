@@ -1,34 +1,61 @@
 {% macro post_form(form_route, type="post") %}
-<div class="post-form-container" x-data="{showForm: false}">
-  <span class="show-post-form" @click="showForm = true" x-show="!showForm">
-    {% if type=="thread" %}
-    Start a New Thread
-    {% else %}
-    Post a Reply
-    {% endif %}
-  </span>
-  <form x-cloak x-show="showForm" class="post-form" method="POST" action="{{ form_route }}"
-    enctype="multipart/form-data" autocomplete="off" x-data="{ content: '', file: undefined }">
-    <div class="input-group vertical">
-      <input type="text" name="name" id="name-input" autocomplete="off" />
-      <label for="name-input">Name</label>
-    </div>
-    {% if type == "thread"%}
-    <div class="input-group vertical">
-      <input type="text" name="title" id="title-input" autocomplete="off" />
-      <label for="title-input">Title</label>
-    </div>
-    {% endif %}
-    <div class="input-group vertical">
-      <input type="file" name="attachments" id="attachments-input" autocomplete="off" {% if type=="thread" %} required
-        {% endif %} />
-      <label for="attachments-input">Attachments</label>
-    </div>
-    <div class="input-group vertical">
-      <textarea name="content" id="content-input" autocomplete="off" x-model="content" required></textarea>
-      <label for="content-input">Content</label>
-    </div>
-    <button type="submit" x-bind:disabled="content.length <= 0" x-effect="console.log(content.length)">Submit</button>
-  </form>
-</div>
+  <div class="post-form-container" x-data="{ showForm: false }">
+    <span class="show-post-form" @click="showForm = true" x-show="!showForm">
+      {% if type=="thread" %}
+        Start a New Thread
+      {% else %}
+        Post a Reply
+      {% endif %}
+    </span>
+    <form
+      x-cloak
+      x-show="showForm"
+      class="post-form"
+      method="POST"
+      action="{{ form_route }}"
+      enctype="multipart/form-data"
+      autocomplete="off"
+      x-data="{ content: '', file: undefined }"
+    >
+      <div class="input-group vertical">
+        <input type="text" name="name" id="name-input" autocomplete="off" />
+        <label for="name-input">Name</label>
+      </div>
+      {% if type == "thread" %}
+        <div class="input-group vertical">
+          <input type="text" name="title" id="title-input" autocomplete="off" />
+          <label for="title-input">Title</label>
+        </div>
+      {% endif %}
+      <div class="input-group vertical">
+        <input
+          type="file"
+          name="attachments"
+          id="attachments-input"
+          autocomplete="off"
+          {% if type=="thread" %}
+            required
+          {% endif %}
+        />
+        <label for="attachments-input">Attachments</label>
+      </div>
+      <div class="input-group vertical">
+        <textarea
+          name="content"
+          id="content-input"
+          autocomplete="off"
+          x-model="content"
+          required
+        ></textarea>
+        <label for="content-input">Content</label>
+      </div>
+      <button
+        type="submit"
+        x-bind:disabled="content.length <= 0"
+        x-effect="console.log(content.length)"
+      >
+        Submit
+      </button>
+    </form>
+  </div>
 {% endmacro %}

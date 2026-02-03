@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "prettier": "^3.8.1",
+    "prettier-plugin-alpine": "git://github.com/saveman71/prettier-plugin-alpinejs.git",
+    "prettier-plugin-jinja-template": "^2.1.0"
+  }
+}

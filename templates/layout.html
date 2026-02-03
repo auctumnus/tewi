@@ -1,47 +1,42 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}tewi{% endblock %}</title>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <link rel="stylesheet" href="/static/inter.css" />
+    <link rel="stylesheet" href="/static/main.css" />
+    {% block head %}{% endblock %}
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}tewi{% endblock %}</title>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="/static/inter.css" />
-  <link rel="stylesheet" href="/static/main.css" />
-  {% block head %}{% endblock %}
-</head>
-
-<body>
-  <div class="header">
-    <nav>
-      {% block nav %}{% endblock %}
-    </nav>
-    <div class="container">
-      <div class="site-branding-container">
-        <div class="site-branding">
-          <a href="/" class="site-logo-main">
-            <h1 aria-hidden="true">^-^</h1>
-          </a>
-          <a href="/" class="site-logo-text">
-            <span id="header-ascii-label">tewi</span>
-          </a>
+  <body>
+    <div class="header">
+      <nav>{% block nav %}{% endblock %}</nav>
+      <div class="container">
+        <div class="site-branding-container">
+          <div class="site-branding">
+            <a href="/" class="site-logo-main">
+              <h1 aria-hidden="true">^-^</h1>
+            </a>
+            <a href="/" class="site-logo-text">
+              <span id="header-ascii-label">tewi</span>
+            </a>
+          </div>
         </div>
-      </div>
-      <div class="board-info-container">
-        <span class="board-info">{% block board_info %}{% endblock %}</span>
-      </div>
-      <div class="content-hat">
-        {% block content_hat %}{% endblock %}
+        <div class="board-info-container">
+          <span class="board-info">{% block board_info %}{% endblock %}</span>
+        </div>
+        <div class="content-hat">{% block content_hat %}{% endblock %}</div>
       </div>
     </div>
-  </div>
 
-  <div class="content">
-    {% block content %}{% endblock %}
-  </div>
+    <div class="content">{% block content %}{% endblock %}</div>
 
-  <!-- load last scripts -->
-  {% block scripts %}{% endblock %}
-</body>
-
+    <!-- load last scripts -->
+    {% block scripts %}{% endblock %}
+  </body>
 </html>

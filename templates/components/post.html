@@ -1,28 +1,50 @@
 {% macro post(post, board_slug, op_post_number, is_op=false) %}
-<div class="post" :class="{ 'image-expanded': open }" x-data="{height: 140, width: 160, open: false}">
-  <div class="attachment-container">
-    {% if let Some(attachment) = post.attachments.get(0) %}
-        <img x-data="{thumbnail:'{{ crate::util::thumbnail_src(attachment.id) }}',image:'{{ crate::util::attachment_src(attachment.id) }}'}"
-        class="attachment" src="{{ crate::util::thumbnail_src(attachment.id) }}" x-bind:src="open ? image : thumbnail"
-        x-bind:width="open ? undefined : width" x-on:click="open = !open" />
-        <a class="filename" href="{{ crate::util::attachment_src(attachment.id) }}">{{attachment.original_filename}}</a>
-    {% endif %}
-  </div>
-  <div class="post-header">
-    {% if is_op %}
-    <div class="op-title">{{ post.title| assigned_or("") }}</div>
-    {% endif %}
-    <span class="trip-name">{{ post.name | assigned_or("Anonymous")}}</span>
-    <span class="post-date">{{ post.created_at }}</span>
-    <a class="post-number"
-      href="/board/{{ board_slug }}/thread/{{ op_post_number }}{% if !is_op %}#{{ post.post_number }}{% endif %}">ID.
-      {{post.post_number}}</a>
-    <div class="backlinks">
-        {% for backlink in post.backlinks %}
-            <a class="backlink" href="/board/{{ board_slug }}/thread/{{ op_post_number }}#{{ backlink.post_number }}">&#8617;{{ backlink.post_number }}</a>
-        {% endfor %}
+  <div
+    class="post"
+    :class="{ 'image-expanded': open }"
+    x-data="{height: 140, width: 160, open: false}"
+  >
+    <div class="attachment-container">
+      {% if let Some(attachment) = post.attachments.get(0) %}
+        <img
+          x-data="{thumbnail:'{{ crate::util::thumbnail_src(attachment.id) }}',image:'{{ crate::util::attachment_src(attachment.id) }}'}"
+          class="attachment"
+          src="{{ crate::util::thumbnail_src(attachment.id) }}"
+          x-bind:src="open ? image : thumbnail"
+          x-bind:width="open ? undefined : width"
+          x-on:click="open = !open"
+        />
+        <a
+          class="filename"
+          href="{{ crate::util::attachment_src(attachment.id) }}"
+        >
+          {{ attachment.original_filename }}
+        </a>
+      {% endif %}
     </div>
+    <div class="post-header">
+      {% if is_op %}
+        <div class="op-title">{{ post.title| assigned_or("") }}</div>
+      {% endif %}
+      <span class="trip-name">{{ post.name | assigned_or("Anonymous") }}</span>
+      <span class="post-date">{{ post.created_at }}</span>
+      <a
+        class="post-number"
+        href="/board/{{ board_slug }}/thread/{{ op_post_number }}{% if !is_op %}#{{ post.post_number }}{% endif %}"
+      >
+        ID. {{ post.post_number }}
+      </a>
+      <div class="backlinks">
+        {% for backlink in post.backlinks %}
+          <a
+            class="backlink"
+            href="/board/{{ board_slug }}/thread/{{ op_post_number }}#{{ backlink.post_number }}"
+          >
+            &#8617;{{ backlink.post_number }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="post-body">{{ post.content_rendered | safe }}</div>
   </div>
-  <div class="post-body">{{ post.content_rendered | safe }}</div>
-</div>
 {% endmacro %}

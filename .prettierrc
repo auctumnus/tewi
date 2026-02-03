@@ -1,0 +1,16 @@
+{
+  "semi": true,
+  "tabWidth": 2,
+  "bracketSameLine": false,
+  "plugins": ["prettier-plugin-alpine", "prettier-plugin-jinja-template"],
+  "printWidth": 80,
+  "htmlWhitespaceSensitivity": "css",
+  "overrides": [
+    {
+      "files": ["*.html"],
+      "options": {
+        "parser": "jinja-template"
+      }
+    }
+  ]
+}
