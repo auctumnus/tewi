@@ -1,0 +1,22 @@
+.error-page {
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--spacing-large);
+}
+
+.error-box {
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  padding: var(--spacing-large);
+}
+
+.error-box h2 {
+  color: rgb(178, 59, 30);
+  margin: 0 0 var(--spacing-large) 0;
+  font-size: var(--font-size-sub-title);
+}
+
+.error-box p {
+  margin: var(--spacing-large) 0 0 0;
+}

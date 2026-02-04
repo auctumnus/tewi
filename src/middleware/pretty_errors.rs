@@ -18,14 +18,25 @@ pub async fn pretty_error_codes(request: Request, next: Next) -> Response {
                     .render()
                     .expect("Cant render the error template so just explode");
 
-            // this feels hacky but i couldn't find another way.
-            //  grab the headers and status code from the original
-            //  response and make a new response with an html body
-            let parts = response.into_parts();
-            let parts_two = Html(html).into_response().into_parts();
+            return (StatusCode::NOT_FOUND, Html(html)).into_response();
+        }
+        StatusCode::UNAUTHORIZED => {
+            let html =
+                (view_structs::status::error::not_found::NotFoundTemplate { board_name: None })
+                    .render()
+                    .expect("Cant render the error template so just explode");
 
-            let constructed_response = Response::from_parts(parts.0, parts_two.1);
-            return constructed_response;
+            return (StatusCode::NOT_FOUND, Html(html)).into_response();
+        }
+        StatusCode::INTERNAL_SERVER_ERROR => {
+            let html =
+                (view_structs::status::error::internal_server_error::InternalServerErrorTemplate {
+                    board_name: None,
+                })
+                .render()
+                .expect("Cant render the error template so just explode");
+
+            return (StatusCode::INTERNAL_SERVER_ERROR, Html(html)).into_response();
         }
         _ => return response,
     };
