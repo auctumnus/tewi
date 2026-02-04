@@ -1,4 +1,7 @@
 {
+  "workspaces": [
+    "frontend/"
+  ],
   "devDependencies": {
     "prettier": "^3.8.1",
     "prettier-plugin-alpine": "git://github.com/saveman71/prettier-plugin-alpinejs.git",
