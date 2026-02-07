@@ -118,7 +118,7 @@ impl ThreadRepository {
             OFFSET $3 "#,
             thread_id,
             pagination.limit,
-            pagination.offset
+            pagination.current_offset()
         )
         .fetch_all(&self.0.db)
         .await?;
@@ -136,9 +136,9 @@ impl ThreadRepository {
         Ok(PaginatedResponse {
             items: posts,
             total,
-            offset: pagination.offset,
+            offset: pagination.current_offset(),
             limit: pagination.limit,
-            has_more: (pagination.offset + pagination.limit) < total,
+            has_more: (pagination.current_offset() + pagination.limit) < total,
         })
     }
 
@@ -154,13 +154,7 @@ impl ThreadRepository {
         println!("Materializing thread {}", db_thread.id); // --- IGNORE ---
 
         let replies: Vec<Post> = self
-            .posts_for_thread(
-                db_thread.id,
-                PaginatedRequest {
-                    offset: 0,
-                    limit: 5,
-                },
-            )
+            .posts_for_thread(db_thread.id, PaginatedRequest { page: 1, limit: 3 })
             .await?
             .items
             .into_iter()

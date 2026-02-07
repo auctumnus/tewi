@@ -1,0 +1,20 @@
+.page-nav {
+  margin-top: var(--spacing-4xl);
+}
+.page-nav nav {
+  display: flex;
+  justify-content: center;
+}
+
+.page-nav .pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-normal);
+  background-color: var(--bg-secondary);
+  margin: 0;
+  padding: var(--spacing-large) var(--spacing-extra-large);
+}
+.page-nav .pagination li::marker {
+  content: "";
+}

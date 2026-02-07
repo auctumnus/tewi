@@ -2,7 +2,8 @@ use std::net::SocketAddr;
 
 use askama::Template;
 use axum::{
-    extract::{ConnectInfo, Multipart, Path, State},
+    Form,
+    extract::{ConnectInfo, Multipart, Path, Query, State},
     http::StatusCode,
     response::{Html, Redirect},
 };
@@ -21,19 +22,14 @@ use crate::{
 
 pub async fn board_page(
     BoardInfo(board, board_slugs): BoardInfo,
+    Query(pagination_params): Query<PaginatedRequest>,
     State(s): State<AppState>,
 ) -> Result<Html<String>, StatusCode> {
     let board_repo = BoardRepository::new(&s);
     match board {
         Some(board) => {
             let threads = board_repo
-                .threads_for_board(
-                    board.id,
-                    PaginatedRequest {
-                        limit: 1000,
-                        offset: 0,
-                    },
-                )
+                .threads_for_board(board.id, pagination_params)
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             let html = (BoardPageTemplate {

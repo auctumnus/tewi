@@ -8,6 +8,7 @@
 @import url(board-page.css);
 @import url(thread-page.css);
 @import url(error.css);
+@import url(pagination.css);
 
 .header {
   padding: var(--spacing-normal) var(--spacing-large);

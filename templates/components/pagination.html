@@ -1,0 +1,30 @@
+{% macro pagination(paginated) %}
+<div class="page-nav-container">
+  <nav>
+    <menu class="pagination">
+      {% if paginated.total_pages() > 1 %}
+        <li><a>Prev</a></li>
+      {% for page in 1..=paginated.total_pages() %}
+        <li>
+          {% if page == paginated.current_page() %}
+          {{page}}
+          {% else %}
+          <a href="/board/{{board.slug}}?page={{page}}">{{page}}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+      <li>
+        <a
+        {% if !paginated.has_more %}
+          disabled
+        {% endif %}
+        a
+        >Next</a>
+      </li>
+      </menu>
+      {% else %}
+      <div>End</div>
+      {% endif %}
+  </nav>
+</div>
+{% endmacro %}

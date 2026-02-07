@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% import "components/thread_preview.html" as thread_template %}
 {% import "components/post-form.html" as post_form_macro %}
+{% import "components/pagination.html" as pagination_macro %}
 
 {% block title %}/{{ board.slug }}/ - {{ board.name }}{% endblock %}
 {% block head %}
@@ -29,10 +30,12 @@
     <div class="container">
       <div class="page-threads">
         {% for thread_info in threads.items %}
-          {% call thread_template::thread_preview(thread_info, board.slug) %}
+          {% call thread_template::thread_preview(thread_info, board.slug, admin_session) %}
           {% endcall %}
         {% endfor %}
       </div>
+      {% call pagination_macro::pagination(threads) %}
+      {% endcall %}
     </div>
   </main>
 {% endblock %}

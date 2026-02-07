@@ -65,7 +65,7 @@ impl IpRepository {
             "SELECT * FROM posts WHERE ip_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
             ip.id,
             pagination.limit,
-            pagination.offset
+            pagination.current_offset()
         )
         .fetch_all(&self.0.db)
         .await?;
@@ -75,7 +75,8 @@ impl IpRepository {
         )
         .fetch_one(&self.0.db)
         .await?
-        .count.unwrap_or(0);
+        .count
+        .unwrap_or(0);
 
         let posts_repo = PostRepository::new(&self.0);
         let mut posts = Vec::with_capacity(db_posts.len());
@@ -86,9 +87,9 @@ impl IpRepository {
         Ok(PaginatedResponse {
             items: posts,
             total,
-            offset: pagination.offset,
+            offset: pagination.current_offset(),
             limit: pagination.limit,
-            has_more: (pagination.offset + pagination.limit) < total,
+            has_more: (pagination.current_offset() + pagination.limit) < total,
         })
     }
 }

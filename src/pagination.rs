@@ -22,19 +22,17 @@ pub struct PaginatedResponse<T> {
 
 impl<T> PaginatedResponse<T> {
     pub fn request_last_page(&self) -> PaginatedRequest {
-        let last_offset = if self.total % self.limit == 0 {
-            self.total - self.limit
-        } else {
-            self.total - (self.total % self.limit)
-        };
+        let last_page = self.total / self.limit;
         PaginatedRequest {
             limit: self.limit,
-            offset: last_offset.try_into().unwrap_or(0),
+            page: last_page.try_into().unwrap_or(0),
         }
     }
 
     pub fn total_pages(&self) -> PaginationSize {
-        ((self.total + self.limit - 1) / self.limit).try_into().unwrap_or(0)
+        ((self.total + self.limit - 2) / self.limit)
+            .try_into()
+            .unwrap_or(0)
     }
 
     pub fn current_page(&self) -> PaginationSize {
@@ -54,36 +52,43 @@ impl<T> PaginatedResponse<T> {
 pub struct PaginatedRequest {
     #[serde(default = "default_limit")]
     pub limit: PaginationSize,
-    #[serde(default)]
-    pub offset: PaginationSize,
+    #[serde(default = "default_page")]
+    pub page: PaginationSize,
 }
 
 impl PaginatedRequest {
     pub fn with_previous_page(&self) -> Self {
-        let new_offset = (self.offset - self.limit).max(0);
+        let new_page = (self.page - 1).max(1);
         Self {
             limit: self.limit,
-            offset: new_offset,
+            page: new_page,
         }
     }
 
     pub fn with_next_page(&self) -> Self {
         Self {
             limit: self.limit,
-            offset: self.offset + self.limit,
+            page: self.page + 1,
         }
+    }
+
+    pub fn current_offset(&self) -> i64 {
+        (self.page - 1) * self.limit
     }
 }
 
 fn default_limit() -> PaginationSize {
     10
 }
+fn default_page() -> PaginationSize {
+    1
+}
 
 impl Default for PaginatedRequest {
     fn default() -> Self {
         Self {
             limit: default_limit(),
-            offset: 0,
+            page: default_page(),
         }
     }
 }
@@ -103,8 +108,8 @@ impl FromRequestParts<AppState> for PaginatedRequest {
             return Err((StatusCode::BAD_REQUEST, "invalid limit parameter"));
         }
 
-        if paginated_request.offset < 0 {
-            return Err((StatusCode::BAD_REQUEST, "invalid offset parameter"));
+        if paginated_request.page < 1 {
+            return Err((StatusCode::BAD_REQUEST, "invalid page parameter"));
         }
 
         Ok(paginated_request)

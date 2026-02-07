@@ -161,7 +161,7 @@ impl BoardRepository {
             OFFSET $3"#,
             board_id,
             pagination.limit,
-            pagination.offset
+            pagination.current_offset()
         )
         .fetch_all(&self.0.db)
         .await?;
@@ -179,9 +179,9 @@ impl BoardRepository {
         Ok(PaginatedResponse {
             items: threads,
             total,
-            offset: pagination.offset,
+            offset: pagination.current_offset(),
             limit: pagination.limit,
-            has_more: (pagination.offset + pagination.limit) < total,
+            has_more: (pagination.current_offset() + pagination.limit) < total,
         })
     }
 }
