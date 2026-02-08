@@ -1,18 +1,48 @@
+html > .content {
+  view-transition-name: root;
+}
+
 @view-transition {
   navigation: auto;
 }
 
-@keyframes move-out {
+@keyframes slide-in-right {
   from {
-    transform: translateY(0%);
+    transform: translateX(100%);
   }
 
   to {
-    transform: translateY(-100%);
+    transform: translateX(0%);
   }
 }
+@keyframes slide-out-left {
+  from {
+    transform: translateX(0%);
+  }
 
-@keyframes move-in {
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0%);
+  }
+}
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes slide-in-bottom {
   from {
     transform: translateY(100%);
   }
@@ -21,13 +51,98 @@
     transform: translateY(0%);
   }
 }
+@keyframes slide-in-top {
+  from {
+    transform: translateY(-100%);
+  }
 
-/* Apply the custom animation to the old and new page states */
+  to {
+    transform: translateY(0%);
+  }
+}
+@keyframes slide-out-bottom {
+  from {
+    transform: translateY(0%);
+  }
 
-::view-transition-old(root) {
-  animation: 0.4s ease-in both move-out;
+  to {
+    transform: translateY(-100%);
+  }
+}
+@keyframes slide-out-top {
+  from {
+    transform: translateY(0%);
+  }
+
+  to {
+    transform: translateY(-100%);
+  }
+}
+@keyframes scale-up {
+  from {
+    scale: 0;
+  }
+}
+@keyframes scale-down {
+  to {
+    scale: 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
 }
 
-::view-transition-new(root) {
-  animation: 0.4s ease-in both move-in;
+html[data-transition='leave-home'] {
+  &::view-transition-old(root) {
+    animation: 0.2s ease-in both slide-out-up;
+  }
+  &::view-transition-new(root) {
+    animation: 0.2s ease-in both slide-in-bottom;
+  }
+}
+
+html[data-transition='return-home'] {
+  &::view-transition-old(root) {
+    animation: 0.2s ease-in both slide-out-down;
+  }
+  &::view-transition-new(root) {
+    animation: 0.2s ease-in both slide-in-top;
+  }
+}
+
+html[data-transition='push'] {
+  &::view-transition-old(root) {
+    animation: 0.2s ease-in both slide-out-left;
+  }
+  &::view-transition-new(root) {
+    animation: 0.2s ease-in both slide-in-right;
+  }
+}
+
+html[data-transition='pop'] {
+  &::view-transition-old(root) {
+    animation: 0.2s ease-in both slide-out-right;
+  }
+  &::view-transition-new(root) {
+    animation: 0.2s ease-in both slide-in-left;
+  }
+}
+
+/* Animation styles for reload type only */
+html[data-transition='reload'] {
+  &::view-transition-old(root) {
+    animation: fade-out, scale-down;
+  }
+  &::view-transition-new(root) {
+    animation:
+      0.2s ease-in fade-in,
+      scale-up;
+  }
 }

@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}tewi - Home{% endblock %}</title>
+    <title>tewi - Home</title>
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
     <link rel="stylesheet" href="/static/inter.css" />
     <link rel="stylesheet" href="/static/main.css" />
-    {% block head %}{% endblock %}
+    <script src="/static/home.js"></script>
   </head>
 
   <body>
@@ -47,7 +47,5 @@
         </div>
       </main>
     </div>
-    <!-- load last scripts -->
-    {% block scripts %}{% endblock %}
   </body>
 </html>
