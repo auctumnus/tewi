@@ -4,14 +4,17 @@ use ipnetwork::IpNetwork;
 use uuid::Uuid;
 
 use crate::{
-    AppState, err::{AppResult, banned, unauthorized}, markup::{MarkupRenderer, Render}, models::{
+    AppState,
+    err::{AppResult, banned, unauthorized},
+    markup::{MarkupRenderer, Render},
+    models::{
         admins::Admin,
         attachments::{Attachment, AttachmentRepository},
         bans::BanRepository,
         boards::BoardRepository,
         ips::IpRepository,
         threads::ThreadRepository,
-    }
+    },
 };
 
 #[derive(sqlx::FromRow)]
@@ -33,8 +36,8 @@ pub struct DBPost {
     pub name: String,
     pub content: String,
 
+    pub removed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
-    pub hidden_at: Option<DateTime<Utc>>,
 }
 #[derive(Debug)]
 pub struct Post {
@@ -54,20 +57,14 @@ pub struct Post {
     pub content: String,
     pub content_rendered: String,
 
+    pub removed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
-    pub hidden_at: Option<DateTime<Utc>>,
 }
 
 pub enum AdminAction {
     Delete,
-    Hide,
-    Unhide,
-    Sticky,
-    Unsticky,
-    Ban {
-        reason: String,
-        duration: Option<i64>,
-    },
+    Ban { reason: String, duration: i64 },
+    Remove { content: bool, attachment: bool },
 }
 
 pub enum PostAction {
@@ -105,16 +102,19 @@ fn parse_references(content: &str) -> Vec<(i32, Option<&str>)> {
         // >>>/board/123
         if let Some(stripped) = word.strip_prefix(">>>/") {
             let parts: Vec<&str> = stripped.split('/').collect();
-            if parts.len() == 2 && let Ok(post_number) = parts[1].parse::<i32>() {
+            if parts.len() == 2
+                && let Ok(post_number) = parts[1].parse::<i32>()
+            {
                 references.push((post_number, Some(parts[0])));
             }
             continue;
         }
 
         // >>123
-        if let Some(stripped) = word.strip_prefix(">>") &&
-            let Ok(post_number) = stripped.parse::<i32>() {
-                references.push((post_number, None));
+        if let Some(stripped) = word.strip_prefix(">>")
+            && let Ok(post_number) = stripped.parse::<i32>()
+        {
+            references.push((post_number, None));
         }
     }
     references
@@ -190,7 +190,8 @@ impl PostRepository {
             } else {
                 board_id
             };
-            if let Ok(referenced_post) = self.find_by_board_and_number(board_id, post_number).await {
+            if let Ok(referenced_post) = self.find_by_board_and_number(board_id, post_number).await
+            {
                 sqlx::query!(
                     "INSERT INTO refs (from_post_id, to_post_id) VALUES ($1, $2)",
                     post_id,
@@ -203,13 +204,14 @@ impl PostRepository {
 
         if matches!(create_post.target, PostCreationTarget::Board(_)) {
             let threads = ThreadRepository::new(&self.0);
-            threads.add_op(
-                thread_id,
-                crate::models::threads::AddOpTemplate { post_id },
-                &mut tx,
-            ).await?;
+            threads
+                .add_op(
+                    thread_id,
+                    crate::models::threads::AddOpTemplate { post_id },
+                    &mut tx,
+                )
+                .await?;
         }
-
 
         let attachments = AttachmentRepository::new(&self.0);
         for attachment in create_post.attachments {
@@ -308,13 +310,9 @@ impl PostRepository {
         db_post: DBPost,
         attachments: Vec<Attachment>,
     ) -> AppResult<Post> {
-        let replying_to = self
-            .find_replying_to(db_post.id, db_post.thread_id)
-            .await?;
+        let replying_to = self.find_replying_to(db_post.id, db_post.thread_id).await?;
 
-        let backlinks = self
-            .find_backlinks(db_post.id, db_post.thread_id)
-            .await?;
+        let backlinks = self.find_backlinks(db_post.id, db_post.thread_id).await?;
 
         let board_id = sqlx::query_scalar!(
             "SELECT board_id FROM threads WHERE id = $1",
@@ -355,8 +353,8 @@ impl PostRepository {
             },
             content: db_post.content,
             content_rendered,
+            removed_at: db_post.removed_at,
             created_at: db_post.created_at,
-            hidden_at: db_post.hidden_at,
             replying_to,
             backlinks,
             board_slug,
@@ -415,33 +413,35 @@ impl PostRepository {
                             .execute(&self.0.db)
                             .await?;
                     }
-                    AdminAction::Hide => {
-                        tracing::info!("Admin {} is hiding post {}", requestor.name, post_id);
-                        sqlx::query("UPDATE posts SET hidden_at = NOW() WHERE id = $1")
+                    AdminAction::Remove {
+                        content,
+                        attachment,
+                    } => {
+                        if content {
+                            tracing::info!(
+                                "Admin {} is removing content for post {}",
+                                requestor.name,
+                                post_id
+                            );
+                            sqlx::query(
+                                "UPDATE posts SET content = '', removed_at = NOW() WHERE id = $1",
+                            )
                             .bind(post_id)
                             .execute(&self.0.db)
                             .await?;
-                    }
-                    AdminAction::Unhide => {
-                        tracing::info!("Admin {} is unhiding post {}", requestor.name, post_id);
-                        sqlx::query("UPDATE posts SET hidden_at = NULL WHERE id = $1")
-                            .bind(post_id)
-                            .execute(&self.0.db)
-                            .await?;
-                    }
-                    AdminAction::Sticky => {
-                        tracing::info!("Admin {} is sticking post {}", requestor.name, post_id);
-                        sqlx::query("UPDATE posts SET sticky = TRUE WHERE id = $1")
-                            .bind(post_id)
-                            .execute(&self.0.db)
-                            .await?;
-                    }
-                    AdminAction::Unsticky => {
-                        tracing::info!("Admin {} is unsticking post {}", requestor.name, post_id);
-                        sqlx::query("UPDATE posts SET sticky = FALSE WHERE id = $1")
-                            .bind(post_id)
-                            .execute(&self.0.db)
-                            .await?;
+                        }
+                        if attachment {
+                            tracing::info!(
+                                "Admin {} is removing attachment(s) for post {}",
+                                requestor.name,
+                                post_id
+                            );
+                            let attachments_repo = AttachmentRepository::new(&self.0);
+
+                            attachments_repo
+                                .remove_post_attachments(requestor, post_id)
+                                .await?;
+                        }
                     }
                     AdminAction::Ban { reason, duration } => {
                         let Some(ip_id) = db_post.ip_id else {
@@ -459,14 +459,40 @@ impl PostRepository {
                             reason,
                             duration
                         );
-                        sqlx::query(
-                            "INSERT INTO bans (ip_id, reason, duration) VALUES ($1, $2, $3)",
+
+                        let mut tx = self.0.db.begin().await.map_err(|err| {
+                            dbg!(&err);
+                            err
+                        })?;
+
+                        let ban_id = sqlx::query_scalar!(
+                            "INSERT INTO bans (ip_id, reason, banned_by, expires_at) VALUES ($1, $2, $3, $4) RETURNING id",
+                            ip_id,
+                            reason,
+                            requestor.id,
+                            chrono::DateTime::from_timestamp(duration, 0),
                         )
-                        .bind(ip_id)
-                        .bind(reason)
-                        .bind(duration)
-                        .execute(&self.0.db)
-                        .await?;
+                        .fetch_one(&mut *tx)
+                        .await
+                        .map_err(|err| {
+                            dbg!(&err);
+                            err
+                        })?;
+
+                        sqlx::query("UPDATE posts SET associated_ban_id = $1 WHERE id = $2")
+                            .bind(ban_id)
+                            .bind(post_id)
+                            .execute(&mut *tx)
+                            .await
+                            .map_err(|err| {
+                                dbg!(&err);
+                                err
+                            })?;
+
+                        tx.commit().await.map_err(|err| {
+                            dbg!(&err);
+                            err
+                        })?;
                     }
                 }
             }

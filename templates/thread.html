@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
-{% import "components/thread_preview.html" as thread_template %}
+{% import "components/post.html" as post_macro %}
 {% import "components/post-form.html" as post_form_macro %}
+{% import "components/thread-controls.html" as thread_controls %}
 {% block title %}/{{ board.slug }}/ - {{ board.name }}{% endblock %}
 
 {% block nav %}
@@ -23,9 +24,39 @@
 {% block content %}
   <main class="thread-page">
     <div class="container">
-      <div class="tread-content">
-        {% call thread_template::thread_preview(thread, board.slug) %}
-        {% endcall %}
+      <div
+        class="
+        thread-content
+        {% if thread.hidden_at.is_some() %}
+          thread-hidden
+        {% endif %}"
+      >
+        {% if let Some(op_post) = thread.op_post %}
+          {% if let Some((session,admin)) = admin_session %}
+            <div class="admin-thread-options">
+              <div class="admin-thread-status">
+                {% if thread.hidden_at.is_some() %}
+                  <span class="thread-hidden-message"
+                    >This thread is hidden</span
+                  >
+                {% endif %}
+              </div>
+              <div class="admin-thread-actions">
+                {% call thread_controls::thread_controls(board.slug, op_post.post_number, thread=thread) %}
+                {% endcall %}
+              </div>
+            </div>
+          {% endif %}
+          {{ post_macro::post(post=op_post, board_slug=board.slug, op_post_number=op_post.post_number, admin_session=admin_session, is_op=true) }}
+          {% for post in thread.replies %}
+            <div class="post-container">
+              {{ post_macro::post(post=post, board_slug=board.slug, op_post_number=op_post.post_number, admin_session=admin_session) }}
+            </div>
+          {% endfor %}
+        {% else %}
+          <div>This thread has no OP, thats weird.</div>
+        {% endif %}
+        <hr />
       </div>
     </div>
   </main>

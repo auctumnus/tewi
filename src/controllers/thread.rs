@@ -7,32 +7,62 @@ use axum::{
     http::StatusCode,
     response::{Html, Redirect},
 };
+use serde::{Deserialize, Serialize};
 
 use crate::{
-    AppState, board_info::BoardInfo, err::{AppError, bad_request}, models::{
+    AppState,
+    board_info::BoardInfo,
+    controllers::common::form::{PostInfo, multipart_to_post_info},
+    err::{AppError, AppResult, bad_request},
+    extract_session::AdminSession,
+    models::{
         boards::BoardRepository,
-        posts::{AttachmentInfo, CreatePost, PostCreationTarget, PostRepository},
-        threads::ThreadRepository,
-    }, pagination::PaginatedRequest, parse_multipart::read_chunks_until_done, view_structs::{
-        self,
-        board_page::BoardPageTemplate,
-        status::error::not_found::NotFoundTemplate,
-    }
+        posts::{CreatePost, PostCreationTarget, PostRepository},
+        threads::{self, ThreadAction, ThreadRepository},
+    },
+    pagination::PaginatedRequest,
+    view_structs::{
+        self, board_page::BoardPageTemplate, status::error::not_found::NotFoundTemplate,
+    },
 };
+
+#[derive(Deserialize, Debug, Clone, Serialize)]
+enum ThreadDeleteOptions {
+    Sticky(bool),
+    Close(bool),
+    Hide(bool),
+}
+
+impl TryFrom<view_structs::thread_admin_form::ThreadAdminForm> for ThreadDeleteOptions {
+    type Error = AppError;
+    fn try_from(value: view_structs::thread_admin_form::ThreadAdminForm) -> AppResult<Self> {
+        match value.action.as_str() {
+            "sticky" => Ok(ThreadDeleteOptions::Sticky(true)),
+            "unsticky" => Ok(ThreadDeleteOptions::Sticky(false)),
+            "close" => Ok(ThreadDeleteOptions::Close(true)),
+            "unclose" => Ok(ThreadDeleteOptions::Close(false)),
+            "hide" => Ok(ThreadDeleteOptions::Hide(true)),
+            "unhide" => Ok(ThreadDeleteOptions::Hide(false)),
+            _ => Err(bad_request("Invalid delete action")),
+        }
+    }
+}
 
 pub async fn board_page(
     BoardInfo(board, board_slugs): BoardInfo,
     Query(pagination_params): Query<PaginatedRequest>,
     State(s): State<AppState>,
+    AdminSession(admin_session): AdminSession,
 ) -> Result<Html<String>, StatusCode> {
     let board_repo = BoardRepository::new(&s);
     match board {
         Some(board) => {
             let threads = board_repo
-                .threads_for_board(board.id, pagination_params)
+                .threads_for_board(board.id, pagination_params, admin_session.is_none())
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             let html = (BoardPageTemplate {
+                admin_session,
                 form_route: format!("/board/{}", board.slug.clone()),
                 board,
                 board_slugs,
@@ -51,96 +81,6 @@ pub async fn board_page(
     }
 }
 
-struct PostInfo {
-    title: String,
-    name: String,
-    content: String,
-    attachments: Vec<AttachmentInfo>,
-}
-
-async fn multipart_to_post_info(
-    mut multipart: Multipart
-) -> Result<PostInfo, AppError> {
-    let mut title = String::new();
-    let mut name = String::new();
-    let mut content = String::new();
-    let mut attachments = vec![];
-
-    while let Some(field) = multipart
-        .next_field()
-        .await
-        .map_err(|_| AppError {
-            message: "Failed to parse multipart form".to_owned(),
-            status_code: StatusCode::BAD_REQUEST,
-        })?
-    {
-        match field.name().unwrap_or("") {
-            "title" => {
-                title = field
-                    .text()
-                    .await
-                    .map_err(|_| AppError {
-                        message: "Failed to read title field".to_owned(),
-                        status_code: StatusCode::BAD_REQUEST,
-                    })?;
-            }
-            "name" => {
-                name = field
-                    .text()
-                    .await
-                    .map_err(|_| AppError {
-                        message: "Failed to read name field".to_owned(),
-                        status_code: StatusCode::BAD_REQUEST,
-                    })?;
-            }
-            "content" => {
-                content = field
-                    .text()
-                    .await
-                    .map_err(|_| AppError {
-                        message: "Failed to read content field".to_owned(),
-                        status_code: StatusCode::BAD_REQUEST,
-                    })?;
-            }
-            "attachments" => {
-                let content_type = field
-                    .content_type()
-                    .ok_or(bad_request("Missing content type for attachment"))?
-                    .to_string();
-                let filename = field
-                    .file_name()
-                    .ok_or(bad_request("Missing filename for attachment"))?
-                    .to_string();
-
-                let data = read_chunks_until_done(field)
-                    .await
-                    .map_err(|_| AppError {
-                        message: "Failed to read attachment data".to_owned(),
-                        status_code: StatusCode::BAD_REQUEST,
-                    })?;
-                if data.is_empty() {
-                    continue;
-                }
-
-                attachments.push(AttachmentInfo{
-                    data,
-                    content_type,
-                    filename,
-                });
-            }
-            _ => {}
-        }
-    }
-
-    Ok(PostInfo {
-        title,
-        name,
-        content,
-        attachments,
-    })
-}
-
-
 pub async fn create_thread(
     BoardInfo(board, _): BoardInfo,
     State(s): State<AppState>,
@@ -151,7 +91,6 @@ pub async fn create_thread(
 
     match board {
         Some(board) => {
-
             let post_info = multipart_to_post_info(multipart).await?;
             let PostInfo {
                 title,
@@ -161,7 +100,9 @@ pub async fn create_thread(
             } = post_info;
 
             if attachments.is_empty() {
-                return Err(bad_request("At least one attachment is required to create a thread"));
+                return Err(bad_request(
+                    "At least one attachment is required to create a thread",
+                ));
             }
 
             let op_post = post_repo
@@ -181,62 +122,6 @@ pub async fn create_thread(
                 format!("/board/{}/thread/{}", board.slug, op_post.post_number).as_str(),
             ))
         }
-        None => Err(AppError { 
-            message: "Board not found".to_owned(),
-            status_code: StatusCode::NOT_FOUND,
-        }),
-    }
-}
-
-
-pub async fn create_post(
-    BoardInfo(board, _): BoardInfo,
-    Path(path): Path<(String, i32)>,
-    State(s): State<AppState>,
-    ConnectInfo(connection_info): ConnectInfo<SocketAddr>,
-    multipart: Multipart,
-) -> Result<Redirect, AppError> {
-    let post_repo = PostRepository::new(&s);
-    let thread_repo = ThreadRepository::new(&s);
-
-    match board {
-        Some(board) => {
-            let post_info = multipart_to_post_info(multipart).await?;
-            let PostInfo {
-                title,
-                name,
-                content,
-                attachments,
-            } = post_info;
-
-            let thread = thread_repo
-                .find_by_board_and_number(
-                    board.id,
-                    path.1,
-                )
-                .await?;
-
-            println!("Creating post in thread {} on board {}", thread.id, board.id); // --- IGNORE ---
-
-            post_repo
-                .create(
-                    connection_info.ip().into(),
-                    CreatePost {
-                        target: PostCreationTarget::Thread(thread.id),
-                        title,
-                        name,
-                        content,
-                        attachments,
-                    },
-                )
-                .await?;
-
-            println!("Post created in thread {}", thread.id); // --- IGNORE ---
-
-            Ok(Redirect::to(
-                format!("/board/{}/thread/{}", board.slug, path.1).as_str(),
-            ))
-        }
         None => Err(AppError {
             message: "Board not found".to_owned(),
             status_code: StatusCode::NOT_FOUND,
@@ -247,6 +132,7 @@ pub async fn create_post(
 pub async fn thread(
     BoardInfo(board, board_slugs): BoardInfo,
     Path(path): Path<(String, i32)>,
+    AdminSession(admin_session): AdminSession,
     State(s): State<AppState>,
 ) -> Result<Html<String>, StatusCode> {
     match board {
@@ -254,19 +140,17 @@ pub async fn thread(
             let thread_repo = ThreadRepository::new(&s);
 
             let thread = thread_repo
-                .find_by_board_and_number(
-                    board.id,
-                    path.1,
-                )
+                .find_by_board_and_number(board.id, path.1)
                 .await
                 .map_err(|_| StatusCode::NOT_FOUND)?;
 
             let thread = thread_repo
-                .materialize(thread)
+                .materialize(thread, None)
                 .await
                 .map_err(|_| StatusCode::NOT_FOUND)?;
 
             let html = (view_structs::thread::ThreadTemplate {
+                admin_session,
                 form_route: format!("/board/{}/thread/{}", board.slug.clone(), path.1),
                 board,
                 board_slugs,
@@ -277,5 +161,89 @@ pub async fn thread(
             Ok(Html(html))
         }
         None => Err(StatusCode::NOT_FOUND),
+    }
+}
+
+pub async fn delete_thread(
+    BoardInfo(board, _): BoardInfo,
+    State(s): State<AppState>,
+    Path(path): Path<(String, i32)>,
+    AdminSession(admin_session): AdminSession,
+    Form(payload): Form<view_structs::thread_admin_form::ThreadAdminForm>,
+) -> AppResult<Redirect> {
+    match admin_session {
+        Some((_, admin)) => {
+            let board = board.ok_or(AppError {
+                message: "Not a post".to_string(),
+                status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            })?;
+
+            let threads_repo = ThreadRepository::new(&s);
+
+            let thread = threads_repo
+                .find_by_board_and_number(board.id, path.1)
+                .await
+                .map_err(|_| AppError {
+                    message: "Not a thread".to_string(),
+                    status_code: StatusCode::NOT_FOUND,
+                })?;
+
+            let thread = threads_repo
+                .materialize(thread, None)
+                .await
+                .map_err(|_| AppError {
+                    message: "Not a thread".to_string(),
+                    status_code: StatusCode::NOT_FOUND,
+                })?;
+
+            let delete_params = ThreadDeleteOptions::try_from(payload)?;
+            match delete_params {
+                ThreadDeleteOptions::Sticky(sticky) => {
+                    threads_repo
+                        .perform_action(
+                            ThreadAction::AdminAction {
+                                requestor: admin,
+                                action: threads::AdminAction::Sticky(sticky),
+                            },
+                            thread.id,
+                        )
+                        .await?;
+                }
+                ThreadDeleteOptions::Hide(hide) => {
+                    threads_repo
+                        .perform_action(
+                            ThreadAction::AdminAction {
+                                requestor: admin,
+                                action: threads::AdminAction::Hide(hide),
+                            },
+                            thread.id,
+                        )
+                        .await?;
+                }
+                ThreadDeleteOptions::Close(close) => {
+                    let _ = threads_repo
+                        .perform_action(
+                            ThreadAction::AdminAction {
+                                requestor: admin,
+                                action: threads::AdminAction::Close(close),
+                            },
+                            thread.id,
+                        )
+                        .await
+                        .map_err(|_| AppError {
+                            message: "Action failed".to_string(),
+                            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+                        })?;
+                }
+            }
+
+            return Ok(Redirect::to(
+                format!("/board/{}/thread/{}", board.slug, path.1).as_str(),
+            ));
+        }
+        None => Err(AppError {
+            message: "Not an Admin".to_string(),
+            status_code: StatusCode::UNAUTHORIZED,
+        }),
     }
 }

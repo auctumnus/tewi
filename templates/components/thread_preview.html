@@ -1,16 +1,43 @@
 {% import "components/post.html" as post_macro %}
-{% macro thread_preview(thread_info, board_slug) %}
+{% import "components/thread-controls.html" as thread_controls %}
+{% macro thread_preview(thread_info, board_slug, admin_session) %}
   <div class="thread-preview">
-    {% if let Some(op_post) = thread_info.op_post %}
-      {{ post_macro::post(post=op_post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session, is_op=true) }}
-      {% for post in thread_info.replies %}
-        <div class="post-container">
-          {{ post_macro::post(post=post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session) }}
-        </div>
-      {% endfor %}
-    {% else %}
-      <div>This thread has no OP, thats weird.</div>
+    <input type="checkbox" class="fold-thread" />
+    {% if thread_info.stickied_at.is_some() %}
+      <span class="stickied-icon">📌</span>
     {% endif %}
+    <div
+      class="
+      thread-content
+    {% if thread_info.hidden_at.is_some() %}
+        thread-hidden
+      {% endif %}
+  "
+    >
+      {% if let Some(op_post) = thread_info.op_post %}
+        {% if let Some((session,admin)) = admin_session %}
+          <div class="admin-thread-options">
+            <div class="admin-thread-status">
+              {% if thread_info.hidden_at.is_some() %}
+                <span class="thread-hidden-message">This thread is hidden</span>
+              {% endif %}
+            </div>
+            <div class="admin-thread-actions">
+              {% call thread_controls::thread_controls(board_slug, op_post.post_number, thread=thread_info) %}
+              {% endcall %}
+            </div>
+          </div>
+        {% endif %}
+        {{ post_macro::post(post=op_post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session, is_op=true) }}
+        {% for post in thread_info.replies %}
+          <div class="post-container">
+            {{ post_macro::post(post=post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session) }}
+          </div>
+        {% endfor %}
+      {% else %}
+        <div>This thread has no OP, thats weird.</div>
+      {% endif %}
+    </div>
     <hr />
   </div>
 {% endmacro %}

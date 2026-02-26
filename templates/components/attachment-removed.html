@@ -1,0 +1,12 @@
+{% macro removed_image() %}
+  <img
+    x-data=""
+    class="attachment"
+    src="/assets/removed-by-moderator.png"
+    x-bind:width="open ? undefined : width"
+    x-on:click="open = !open"
+  />
+  <a class="filename" href="/assets/removed-by-moderator.png">
+    {{ attachment.original_filename }}
+  </a>
+{% endmacro %}

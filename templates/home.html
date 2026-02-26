@@ -31,12 +31,16 @@
     <div class="content">
       <main class="home">
         <div class="container-narrow board-index">
-          {% for category in categories %}
+          {% for b_cat in categories %}
             <div class="board-category">
-              <span>{{ category.name }}</span>
+              {% if let Some(cat_name) = b_cat.0 %}
+                <span>{{ cat_name }}</span>
+              {% else %}
+                <span>Other</span>
+              {% endif %}
               <hr />
               <ul>
-                {% for board in boards %}
+                {% for board in b_cat.1 %}
                   <li class="board-list-entry">
                     <a href="/board/{{ board.slug }}">{{ board.name }}</a>
                   </li>

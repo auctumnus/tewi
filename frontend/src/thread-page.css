@@ -3,3 +3,78 @@ main.thread-page {
   flex-direction: column;
   align-items: center;
 }
+
+.thread-content {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--spacing-large);
+  column-gap: var(--spacing-large);
+  grid-template-columns: min-content 1fr;
+  grid-template-rows: 1.3em 1fr auto;
+}
+.thread-content.thread-hidden {
+  background-color: var(--bg-secondary);
+  padding: var(--spacing-normal) var(--spacing-normal);
+  border: 2px dashed var(--gray);
+}
+.thread-content .post-body {
+  max-height: 21cap;
+  overflow-y: hidden;
+}
+
+.admin-thread-options {
+  display: flex;
+}
+.admin-thread-options button.link {
+  font-size: var(--font-size-caption);
+  font-family: var(--font-mono);
+}
+
+.admin-thread-status {
+  flex: 2;
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+}
+.admin-thread-actions {
+  flex: 1;
+  display: flex;
+  gap: var(--spacing-small);
+  justify-content: end;
+}
+
+.thread-hidden-message {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-caption);
+  text-align: center;
+  display: flex;
+  flex: 0.5;
+  text-align: center;
+  justify-content: center;
+}
+
+.sticky-button {
+  background-color: unset;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  font-size: var(--font-size-caption);
+}
+.sticky-button::before {
+  content: '[';
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.sticky-button::after {
+  content: ']';
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+.sticky-button:hover {
+  color: var(--green);
+}
+
+.sticky-button.sticky-active:hover {
+  color: var(--orange);
+}

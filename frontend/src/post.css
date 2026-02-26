@@ -29,15 +29,17 @@
 
   blockquote {
     margin-left: 0px;
-    color: var(--green);
+    color: var(--green-light);
     &:before {
-      content: ">";
+      content: '>';
     }
   }
 }
 
 .post-body > p {
   margin-top: 0px;
+  margin-bottom: 0px;
+  line-height: 1.5;
 }
 
 .image-expanded .attachment-container {
@@ -66,14 +68,14 @@
   grid-column-end: 3;
 }
 
-.post .post-container {
+.post-container {
   grid-column-start: 2;
   grid-column-end: 3;
   grid-row: auto;
   display: flex;
 }
 
-.post .post-container .post {
+.post-container .post {
   background-color: var(--bg-secondary);
   padding: var(--spacing-large) var(--spacing-large);
   flex: unset;
@@ -86,20 +88,24 @@
   max-height: 1.4em;
 }
 
-.trip-name,
-.post-title,
-.op-title,
-.post-date,
-.post-number {
+.post-header * {
   font-size: var(--font-size-caption);
 }
+
 .trip-name {
   font-weight: 600;
   color: var(--text-tertiary);
 }
+
 .op-title {
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+.post-header-extra {
+  display: flex;
+  margin-left: var(--spacing-2xl);
+  gap: var(--spacing-small);
 }
 
 .attachment-container {
@@ -114,15 +120,44 @@
   text-overflow: ellipsis;
   text-wrap: nowrap;
   overflow-x: hidden;
+  width: min-content;
+  max-width: 100%;
 }
 
-.thread-preview {
+.popup-dialog {
+  background-color: var(--bg-primary);
+  z-index: 1;
+  padding: 0 var(--spacing-extra-large) var(--spacing-extra-large)
+    var(--spacing-extra-large);
+}
+
+.dialog-header {
   display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
+  justify-content: end;
+  height: var(--spacing-extra-large);
+  margin-top: var(--spacing-small);
+  margin-bottom: var(--spacing-small);
 }
 
-.thread-preview hr {
-  margin-top: var(--spacing-2xl);
-  width: 100%;
+.dialog-header .dialog-header-button {
+  border: 0;
+  background: none;
+}
+.dialog-header .dialog-header-button::before {
+  content: '[';
+  border: 0;
+  background: none;
+}
+.dialog-header .dialog-header-button::after {
+  content: ']';
+  border: 0;
+  background: none;
+}
+
+.post-removed,
+.post-banned {
+  color: var(--orange);
+}
+.post-banned {
+  grid-column-start: 2;
 }

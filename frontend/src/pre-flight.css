@@ -14,9 +14,11 @@
   --gray-slight-dark: rgba(0, 0, 0, 0.65);
   --gray-dark: rgba(0, 0, 0, 0.85);
   --orange-light: rgb(239, 209, 157);
-  --blue: rgb(153, 170, 214);
-  --green-light: rgb(178, 205, 153);
-  --green: rgb(152, 182, 124);
+  --blue-light: rgb(68, 117, 181);
+  --blue: rgb(63, 86, 146);
+  --green-extra-light: rgb(152, 182, 124);
+  --green-light: hsl(91, 30%, 54%);
+  --green: rgb(102, 139, 86);
   --orange: rgb(178, 59, 30);
 
   --bg-primary: var(--orange-light);

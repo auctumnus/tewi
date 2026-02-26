@@ -1,0 +1,78 @@
+{% macro delete_or_ban_form(board_slug, post_number) %}
+  <div x-data="{banFormOpen: false}" style="display: flex;">
+    <button class="link" @click="banFormOpen = !banFormOpen">Ban</button>
+    <dialog
+      class="popup-dialog ban-form"
+      x-bind:open="banFormOpen"
+      x-show="banFormOpen"
+      @click.outside="banFormOpen = false"
+    >
+      <div class="dialog-header">
+        <button
+          class="dialog-header-button"
+          type="button"
+          @click="banFormOpen = false"
+        >
+          🗙
+        </button>
+      </div>
+      <form
+        class="styled-form ban-form"
+        action="/board/{{ board_slug }}/thread/{{ post_number }}/edit"
+        method="post"
+      >
+        <div>
+          <div class="input-group">
+            <label>Actions</label>
+          </div>
+          <div
+            style="display: flex; justify-content: center; gap: var(--spacing-2xl);"
+          >
+            <div class="input-group vertical">
+              <input
+                type="checkbox"
+                name="action-delete"
+                autocomplete="off"
+                value="true"
+              />
+              <label>Delete</label>
+            </div>
+            <div class="input-group vertical">
+              <input
+                type="checkbox"
+                name="action-ban"
+                autocomplete="off"
+                value="true"
+              />
+              <label>Ban</label>
+            </div>
+          </div>
+        </div>
+        <div class="input-group vertical">
+          <textarea
+            name="reason"
+            id="reason-input"
+            autocomplete="off"
+          ></textarea>
+          <label for="reason-input">Reason</label>
+        </div>
+        <div class="input-group vertical">
+          <input
+            type="hidden"
+            name="timezone"
+            x-model="(new Date()).getTimezoneOffset() * -1"
+            value="0"
+          />
+          <input
+            type="datetime-local"
+            name="duration"
+            id="duration-input"
+            autocomplete="off"
+          />
+          <label for="duration-input">Duration</label>
+        </div>
+        <button type="submit">Confirm</button>
+      </form>
+    </dialog>
+  </div>
+{% endmacro %}

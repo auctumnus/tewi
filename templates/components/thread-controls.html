@@ -1,0 +1,42 @@
+{% macro thread_controls(board_slug, op_post_number, thread) %}
+  <form
+    action="/board/{{ board_slug }}/thread/{{ op_post_number }}/delete"
+    method="post"
+  >
+    {% if thread.stickied_at.is_some() %}
+      <input type="hidden" name="action" value="unsticky" />
+      <button class="sticky-button sticky-active" type="submit">
+        Stickied
+      </button>
+    {% else %}
+      <input type="hidden" name="action" value="sticky" />
+      <button class="sticky-button sticky-inactive" type="submit">
+        Sticky
+      </button>
+    {% endif %}
+  </form>
+  <form
+    action="/board/{{ board_slug }}/thread/{{ op_post_number }}/delete"
+    method="post"
+  >
+    {% if thread.closed_at.is_some() %}
+      <input type="hidden" name="action" value="unclose" />
+      <button class="sticky-button sticky-active" type="submit">Closed</button>
+    {% else %}
+      <input type="hidden" name="action" value="close" />
+      <button class="sticky-button sticky-inactive" type="submit">Close</button>
+    {% endif %}
+  </form>
+  <form
+    action="/board/{{ board_slug }}/thread/{{ op_post_number }}/delete"
+    method="post"
+  >
+    {% if thread.hidden_at.is_some() %}
+      <input type="hidden" name="action" value="unhide" />
+      <button class="sticky-button sticky-active" type="submit">Unhide</button>
+    {% else %}
+      <input type="hidden" name="action" value="hide" />
+      <button class="sticky-button sticky-inactive" type="submit">Hide</button>
+    {% endif %}
+  </form>
+{% endmacro %}

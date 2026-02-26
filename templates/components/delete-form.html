@@ -1,0 +1,82 @@
+{% macro delete_form(board_slug, op_post_number, post_number, is_op) %}
+  <div
+    x-data="{deleteFormOpen: false, action: 'remove'}"
+    style="display: flex;"
+  >
+    <button class="link" @click="deleteFormOpen = !deleteFormOpen">
+      Delete
+    </button>
+    <dialog
+      class="popup-dialog ban-form"
+      x-bind:open="deleteFormOpen"
+      x-show="deleteFormOpen"
+      @click.outside="deleteFormOpen = false"
+    >
+      <div class="dialog-header">
+        <button
+          class="dialog-header-button"
+          type="button"
+          @click="deleteFormOpen = false"
+        >
+          🗙
+        </button>
+      </div>
+      <form
+        class="styled-form delete-form"
+        action="/board/{{ board_slug }}/thread/{{ op_post_number }}/post/{{ post_number }}/delete"
+        method="post"
+      >
+        <div>
+          <div class="input-group">
+            <label>Action</label>
+          </div>
+          <div
+            style="display: flex; justify-content: center; gap: var(--spacing-2xl);"
+          >
+            <div class="input-group vertical">
+              <input
+                type="radio"
+                name="action"
+                value="remove"
+                x-model="action"
+              />
+              <label>Remove</label>
+            </div>
+            <div class="input-group vertical">
+              <input type="radio" name="action" value="hide" x-model="action" />
+              <label>Hide</label>
+            </div>
+          </div>
+        </div>
+        <div x-show="action === 'remove'">
+          <div class="input-group">
+            <label>Remove</label>
+          </div>
+          <div
+            style="display: flex; justify-content: center; gap: var(--spacing-2xl);"
+          >
+            <div class="input-group vertical">
+              <input
+                type="checkbox"
+                name="remove-content"
+                autocomplete="off"
+                value="true"
+              />
+              <label>Content</label>
+            </div>
+            <div class="input-group vertical">
+              <input
+                type="checkbox"
+                name="remove-attachment"
+                autocomplete="off"
+                value="true"
+              />
+              <label>Attachment</label>
+            </div>
+          </div>
+        </div>
+        <button type="submit">Confirm</button>
+      </form>
+    </dialog>
+  </div>
+{% endmacro %}

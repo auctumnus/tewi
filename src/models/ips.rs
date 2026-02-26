@@ -1,8 +1,13 @@
 use chrono::{DateTime, Utc};
-use uuid::Uuid;
 use ipnetwork::IpNetwork;
+use uuid::Uuid;
 
-use crate::{AppState, err::AppResult, models::posts::{DBPost, Post, PostRepository}, pagination::{PaginatedRequest, PaginatedResponse}};
+use crate::{
+    AppState,
+    err::AppResult,
+    models::posts::{DBPost, Post, PostRepository},
+    pagination::{PaginatedRequest, PaginatedResponse},
+};
 
 #[derive(sqlx::FromRow)]
 pub struct Ip {
@@ -19,25 +24,17 @@ impl IpRepository {
     }
 
     pub async fn find_by_id(&self, ip_id: Uuid) -> AppResult<Ip> {
-        sqlx::query_as!(
-            Ip,
-            "SELECT * FROM ips WHERE id = $1",
-            ip_id
-        )
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Ip, "SELECT * FROM ips WHERE id = $1", ip_id)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn find_by_address(&self, ip_address: IpNetwork) -> AppResult<Ip> {
-        sqlx::query_as!(
-            Ip,
-            "SELECT * FROM ips WHERE ip_address = $1",
-            ip_address
-        )
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Ip, "SELECT * FROM ips WHERE ip_address = $1", ip_address)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn find_or_create(&self, ip_address: IpNetwork) -> AppResult<Ip> {
@@ -58,7 +55,11 @@ impl IpRepository {
         }
     }
 
-    pub async fn find_posts_by_id(&self, ip_address: IpNetwork, pagination: PaginatedRequest) -> AppResult<PaginatedResponse<Post>> {
+    pub async fn find_posts_by_id(
+        &self,
+        ip_address: IpNetwork,
+        pagination: PaginatedRequest,
+    ) -> AppResult<PaginatedResponse<Post>> {
         let ip = self.find_or_create(ip_address).await?;
         let db_posts = sqlx::query_as!(
             DBPost,

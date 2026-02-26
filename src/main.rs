@@ -20,7 +20,10 @@ use crate::{
     err::AppError,
     extract_session::AdminSession,
     models::{
-        admins::Admin, attachments::{attachment_path, thumbnail_path}, board_categories::{BoardCategory, BoardCategoryRepository}, boards::{Board, BoardRepository, CreateBoard}
+        admins::Admin,
+        attachments::{attachment_path, thumbnail_path},
+        board_categories::{BoardCategory, BoardCategoryRepository},
+        boards::{BoardByCategory, BoardRepository, CreateBoard},
     },
 };
 
@@ -30,19 +33,18 @@ mod config;
 mod controllers;
 mod err;
 mod extract_session;
+mod markup;
 mod middleware;
 mod models;
 mod pagination;
 mod parse_multipart;
-mod view_structs;
 pub mod util;
-mod markup;
+mod view_structs;
 
 #[derive(Template)]
 #[template(path = "home.html")]
 struct HomeTemplate {
-    categories: Vec<BoardCategory>,
-    boards: Vec<Board>,
+    categories: Vec<BoardByCategory>,
 }
 
 /// Shared connections, config, etc.
@@ -215,7 +217,6 @@ async fn main() -> Result<(), AppError> {
 
 fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, SocketAddr> {
     let admin_router = Router::new()
-        .layer(Extension(AdminSession))
         .route("/login", get(controllers::admin::login_page))
         .route("/login", post(controllers::admin::login))
         .route("/logout", post(controllers::admin::logout))
@@ -280,24 +281,35 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
 
     Router::new()
         .layer(Extension(BoardInfo))
+        .layer(Extension(AdminSession))
         .route("/", get(home))
         .route("/board/{slug}", get(controllers::thread::board_page))
-        .route(
-            "/board/{slug}",
-            post(controllers::thread::create_thread).layer(DefaultBodyLimit::max(10485760)),
-        )
+        .route("/board/{slug}", post(controllers::thread::create_thread))
         .route(
             "/board/{slug}/thread/{id}",
             get(controllers::thread::thread),
         )
         .route(
             "/board/{slug}/thread/{id}",
-            post(controllers::thread::create_post).layer(DefaultBodyLimit::max(10485760)),
+            post(controllers::post::create_post),
+        )
+        .route(
+            "/board/{slug}/thread/{id}/delete",
+            post(controllers::thread::delete_thread),
+        )
+        .route(
+            "/board/{slug}/thread/{id}/post/{post_id}/edit",
+            post(controllers::post::edit_post),
+        )
+        .route(
+            "/board/{slug}/thread/{id}/post/{post_id}/delete",
+            post(controllers::post::delete_post),
         )
         .nest("/admin", admin_router)
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
         .nest_service("/uploads", ServeDir::new("uploads"))
+        .layer(DefaultBodyLimit::max(10485760))
         .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
         .layer(axum::middleware::from_fn(
             middleware::pretty_errors::pretty_error_codes,
@@ -315,19 +327,14 @@ async fn fallback_route() -> Result<Html<String>, StatusCode> {
 }
 
 async fn home(State(s): State<AppState>) -> Result<Html<String>, StatusCode> {
-    let category_repo = BoardCategoryRepository::new(&s);
     let boards_repo = BoardRepository::new(&s);
 
-    let categories = category_repo
-        .list_all()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let boards = boards_repo
-        .list_all()
+    let categories = boards_repo
+        .list_all_category_grouped()
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let html = (HomeTemplate { boards, categories })
+    let html = (HomeTemplate { categories })
         .render()
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Html(html))

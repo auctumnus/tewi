@@ -1,25 +1,23 @@
-{% macro post(post, board_slug, op_post_number, is_op=false) %}
+{% import "components/ban-form.html" as ban_form %}
+{% import "components/delete-form.html" as delete_form %}
+{% import "components/post-image.html" as post_image %}
+{% import "components/attachment-removed.html" as attachment_removed %}
+{% macro post(post, board_slug, op_post_number, admin_session, is_op=false) %}
   <div
     class="post"
-    :class="{ 'image-expanded': open }"
+    x-bind:class="{ 'image-expanded': open }"
     x-data="{height: 140, width: 160, open: false}"
+    id="{{ post.post_number }}"
   >
     <div class="attachment-container">
       {% if let Some(attachment) = post.attachments.get(0) %}
-        <img
-          x-data="{thumbnail:'{{ crate::util::thumbnail_src(attachment.id) }}',image:'{{ crate::util::attachment_src(attachment.id) }}'}"
-          class="attachment"
-          src="{{ crate::util::thumbnail_src(attachment.id) }}"
-          x-bind:src="open ? image : thumbnail"
-          x-bind:width="open ? undefined : width"
-          x-on:click="open = !open"
-        />
-        <a
-          class="filename"
-          href="{{ crate::util::attachment_src(attachment.id) }}"
-        >
-          {{ attachment.original_filename }}
-        </a>
+        {% if attachment.removed_at.is_some() %}
+          {% call attachment_removed::removed_image() %}
+          {% endcall %}
+        {% else %}
+          {% call post_image::post_image(attachment) %}
+          {% endcall %}
+        {% endif %}
       {% endif %}
     </div>
     <div class="post-header">
@@ -44,7 +42,24 @@
           </a>
         {% endfor %}
       </div>
+      {% if let Some((session,admin)) = admin_session %}
+        <div class="post-header-extra" x-data="{sticky: false}">
+          {% call delete_form::delete_form(board_slug, op_post_number, post.post_number, is_op) %}
+          {% endcall %}
+          {% call ban_form::delete_or_ban_form(board_slug, op_post.post_number) %}
+          {% endcall %}
+        </div>
+      {% endif %}
     </div>
-    <div class="post-body">{{ post.content_rendered | safe }}</div>
+    <div class="post-body">
+      {% if post.removed_at.is_some() %}
+        <div class="post-removed">[ REMOVED BY MODERATOR ]</div>
+      {% else %}
+        {{ post.content_rendered | safe }}
+      {% endif %}
+    </div>
+    {% if post.associated_ban_id.is_some() %}
+      <div class="post-banned">[ USER BANNED FOR THIS POST]</div>
+    {% endif %}
   </div>
 {% endmacro %}

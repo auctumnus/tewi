@@ -11,3 +11,42 @@
   gap: var(--spacing-3xl);
   flex: 1;
 }
+
+.thread-preview hr {
+  margin-top: var(--spacing-2xl);
+  width: 100%;
+}
+
+.stickied-icon {
+  margin-left: var(--spacing-small);
+}
+
+.fold-thread {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  margin: 0;
+  margin-bottom: var(--spacing-small);
+}
+
+.fold-thread::before {
+  content: '[-]';
+  width: var(--font-size-text);
+  height: var(--font-size-text);
+  text-align: center;
+  font-size: var(--font-size-caption);
+  border-radius: 1px;
+  line-height: 0.64;
+  display: block;
+  font-family: var(--font-mono);
+}
+.fold-thread:checked::before {
+  content: '[+]';
+}
+.thread-preview .thread-content {
+  transition: all 300ms;
+}
+.fold-thread:checked ~ .thread-content {
+  height: 0;
+  overflow: hidden;
+}

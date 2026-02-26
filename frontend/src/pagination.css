@@ -1,12 +1,12 @@
-.page-nav {
+.page-nav-container {
   margin-top: var(--spacing-4xl);
 }
-.page-nav nav {
+.page-nav-container nav {
   display: flex;
   justify-content: center;
 }
 
-.page-nav .pagination {
+.page-nav-container .pagination {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -15,6 +15,7 @@
   margin: 0;
   padding: var(--spacing-large) var(--spacing-extra-large);
 }
-.page-nav .pagination li::marker {
+
+.page-nav-container .pagination li::marker {
   content: "";
 }

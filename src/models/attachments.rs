@@ -3,6 +3,7 @@ use crate::{
     err::{AppResult, malformed},
     models::admins::Admin,
 };
+use chrono::{DateTime, Utc};
 use image::{GenericImageView, ImageFormat, ImageReader, imageops::FilterType};
 use std::io::Cursor;
 use uuid::Uuid;
@@ -30,6 +31,7 @@ pub struct DBAttachment {
     pub thumbnail_height: Option<i64>,
     pub original_filename: String,
     pub spoilered: bool,
+    pub removed_at: Option<DateTime<Utc>>,
 }
 #[derive(Debug)]
 pub struct Attachment {
@@ -41,6 +43,7 @@ pub struct Attachment {
     pub thumbnail_dimensions: Option<(u32, u32)>,
     pub original_filename: String,
     pub spoilered: bool,
+    pub removed_at: Option<DateTime<Utc>>,
 }
 
 pub fn attachment_path(id: &Uuid) -> std::path::PathBuf {
@@ -79,6 +82,7 @@ impl From<DBAttachment> for Attachment {
             thumbnail_dimensions,
             original_filename: db_attachment.original_filename,
             spoilered: db_attachment.spoilered,
+            removed_at: db_attachment.removed_at,
         }
     }
 }
@@ -98,7 +102,11 @@ impl AttachmentRepository {
         Self(state.clone())
     }
 
-    pub async fn create(&self, create_attachment: CreateAttachment, tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> AppResult<Attachment> {
+    pub async fn create(
+        &self,
+        create_attachment: CreateAttachment,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> AppResult<Attachment> {
         if create_attachment.data.len() > MAX_ATTACHMENT_SIZE {
             return Err(malformed("Attachment size exceeds the maximum allowed"));
         }
@@ -161,6 +169,7 @@ impl AttachmentRepository {
             thumbnail_dimensions: Some(thumbnail_dimensions),
             original_filename: create_attachment.original_filename,
             spoilered: create_attachment.spoilered,
+            removed_at: None,
         })
     }
 
@@ -181,6 +190,7 @@ impl AttachmentRepository {
                         thumbnail_height: row.thumbnail_height.map(|h| h as i64),
                         original_filename: row.original_filename,
                         spoilered: row.spoilered,
+                        removed_at: row.removed_at,
                     })
                     .collect::<Vec<_>>()
             })
@@ -189,7 +199,11 @@ impl AttachmentRepository {
     }
 
     pub async fn delete(&self, requestor: Admin, attachment_id: Uuid) -> AppResult<()> {
-        tracing::info!("Admin {} is deleting attachment {}", requestor.name, attachment_id);
+        tracing::info!(
+            "Admin {} is deleting attachment {}",
+            requestor.name,
+            attachment_id
+        );
         let mut tx = self.0.db.begin().await?;
 
         sqlx::query!("SELECT * FROM attachments WHERE id = $1", attachment_id)
@@ -201,6 +215,64 @@ impl AttachmentRepository {
             .await?;
 
         tx.commit().await?;
+
+        Ok(())
+    }
+    pub async fn remove(&self, requestor: Admin, attachment_id: Uuid) -> AppResult<()> {
+        tracing::info!(
+            "Admin {} is deleting attachment {}",
+            requestor.name,
+            attachment_id
+        );
+        let mut tx = self.0.db.begin().await?;
+
+        let attachment = sqlx::query!("SELECT * FROM attachments WHERE id = $1", attachment_id)
+            .fetch_one(&mut *tx)
+            .await?;
+
+        sqlx::query!(
+            "UPDATE attachments SET removed_at = NOW() WHERE id = $1",
+            attachment_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+
+        let thumb_file = thumbnail_path(&attachment.id);
+        let attachment_file = attachment_path(&attachment.id);
+
+        tokio::fs::remove_file(thumb_file).await?;
+        tokio::fs::remove_file(attachment_file).await?;
+
+        Ok(())
+    }
+    pub async fn remove_post_attachments(&self, requestor: Admin, post_id: Uuid) -> AppResult<()> {
+        tracing::info!(
+            "Admin {} is deleting attachment(s) for post {}",
+            requestor.name,
+            post_id
+        );
+        let mut tx = self.0.db.begin().await?;
+
+        let attachment = sqlx::query!("SELECT * FROM attachments WHERE post_id = $1", post_id)
+            .fetch_one(&mut *tx)
+            .await?;
+
+        sqlx::query!(
+            "UPDATE attachments SET removed_at = NOW() WHERE post_id = $1",
+            post_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+
+        let thumb_file = thumbnail_path(&attachment.id);
+        let attachment_file = attachment_path(&attachment.id);
+
+        tokio::fs::remove_file(thumb_file).await?;
+        tokio::fs::remove_file(attachment_file).await?;
 
         Ok(())
     }

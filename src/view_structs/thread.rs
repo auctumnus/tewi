@@ -1,10 +1,14 @@
 use askama::Template;
 
-use crate::models::{boards::Board, threads::Thread};
+use crate::{
+    extract_session::AdminSession,
+    models::{admins::Admin, boards::Board, sessions::Session, threads::Thread},
+};
 
 #[derive(Template)]
 #[template(path = "thread.html")]
 pub struct ThreadTemplate {
+    pub admin_session: Option<(Session, Admin)>,
     pub board: Board,
     pub board_slugs: Vec<String>,
     pub thread: Thread,

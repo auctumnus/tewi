@@ -1,3 +1,5 @@
+use std::{collections::HashMap, iter::Map};
+
 use uuid::Uuid;
 
 use crate::{
@@ -5,18 +7,33 @@ use crate::{
     err::AppResult,
     models::{
         admins::Admin,
+        board_categories,
         threads::{DBThread, Thread, ThreadRepository},
     },
     pagination::{PaginatedRequest, PaginatedResponse},
 };
 
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Board {
     pub id: Uuid,
     pub slug: String,
     pub name: String,
     pub description: String,
     pub category_id: Option<Uuid>,
+    pub next_post_number: i32,
+}
+
+#[derive(Debug)]
+pub struct BoardByCategory(pub Option<String>, pub Vec<Board>);
+
+#[derive(sqlx::FromRow, Debug)]
+struct BoardWithCategoryName {
+    pub id: Uuid,
+    pub slug: String,
+    pub name: String,
+    pub description: String,
+    pub category_id: Option<Uuid>,
+    pub category_name: Option<String>,
     pub next_post_number: i32,
 }
 
@@ -128,7 +145,55 @@ impl BoardRepository {
             .map(|boards| boards.iter().map(|board| board.slug.clone()).collect());
     }
 
-    pub async fn increment_next_post_number(&self, board_id: Uuid, tx: &mut sqlx::Transaction<'_, sqlx::Postgres>) -> AppResult<i32> {
+    pub async fn list_all_category_grouped(&self) -> AppResult<Vec<BoardByCategory>> {
+        let boards = sqlx::query_as!(
+            BoardWithCategoryName,
+            r#"SELECT b.*, c.name as "category_name?"
+            FROM boards b
+            left JOIN board_categories c
+            ON c.id = b.category_id
+            order by c.name"#
+        )
+        .fetch_all(&self.0.db)
+        .await
+        .map_err(Into::<sqlx::Error>::into)?;
+
+        let mut groups = HashMap::<Option<String>, Vec<Board>>::new();
+        for board in boards {
+            if let Some(cat) = groups.get_mut(&board.category_name) {
+                cat.push(Board {
+                    id: board.id,
+                    slug: board.slug,
+                    name: board.name,
+                    description: board.description,
+                    category_id: board.category_id,
+                    next_post_number: board.next_post_number,
+                });
+            } else {
+                groups.insert(
+                    board.category_name,
+                    vec![Board {
+                        id: board.id,
+                        slug: board.slug,
+                        name: board.name,
+                        description: board.description,
+                        category_id: board.category_id,
+                        next_post_number: board.next_post_number,
+                    }],
+                );
+            }
+        }
+        return Ok(groups
+            .iter_mut()
+            .map(|(key, value)| BoardByCategory(key.clone(), value.clone()))
+            .collect());
+    }
+
+    pub async fn increment_next_post_number(
+        &self,
+        board_id: Uuid,
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> AppResult<i32> {
         let next_post_number = sqlx::query_scalar!(
             "UPDATE boards SET next_post_number = next_post_number + 1 WHERE id = $1 RETURNING next_post_number",
             board_id
@@ -150,31 +215,62 @@ impl BoardRepository {
         &self,
         board_id: Uuid,
         pagination: PaginatedRequest,
+        ignore_hidden: bool,
     ) -> AppResult<PaginatedResponse<Thread>> {
-        let db_threads = sqlx::query_as!(
-            DBThread,
-            r#"SELECT *
-            FROM threads
-            WHERE board_id = $1
-            ORDER BY stickied_at DESC, last_post_at DESC
-            LIMIT $2
-            OFFSET $3"#,
-            board_id,
-            pagination.limit,
-            pagination.current_offset()
-        )
-        .fetch_all(&self.0.db)
-        .await?;
-        let total =
-            sqlx::query_scalar!("SELECT COUNT(*) FROM threads WHERE board_id = $1", board_id)
-                .fetch_one(&self.0.db)
+        let db_threads = match ignore_hidden {
+            true => {
+                sqlx::query_as!(
+                    DBThread,
+                    r#"SELECT *
+                    FROM threads
+                    WHERE board_id = $1 AND hidden_at IS NULL
+                    ORDER BY stickied_at ASC, last_post_at DESC
+                    LIMIT $2
+                    OFFSET $3"#,
+                    board_id,
+                    pagination.limit,
+                    pagination.current_offset()
+                )
+                .fetch_all(&self.0.db)
                 .await?
-                .unwrap_or(0);
+            }
+            false => {
+                sqlx::query_as!(
+                    DBThread,
+                    r#"SELECT *
+                    FROM threads
+                    WHERE board_id = $1
+                    ORDER BY stickied_at ASC, last_post_at DESC
+                    LIMIT $2
+                    OFFSET $3"#,
+                    board_id,
+                    pagination.limit,
+                    pagination.current_offset()
+                )
+                .fetch_all(&self.0.db)
+                .await?
+            }
+        };
+        let total = match ignore_hidden {
+            true => sqlx::query_scalar!(
+                "SELECT COUNT(*) FROM threads WHERE board_id = $1 AND hidden_at IS NULL",
+                board_id
+            )
+            .fetch_one(&self.0.db)
+            .await?
+            .unwrap_or(0),
+            false => {
+                sqlx::query_scalar!("SELECT COUNT(*) FROM threads WHERE board_id = $1", board_id)
+                    .fetch_one(&self.0.db)
+                    .await?
+                    .unwrap_or(0)
+            }
+        };
 
         let thread_repo = ThreadRepository::new(&self.0);
         let mut threads = Vec::with_capacity(db_threads.len());
         for db_thread in db_threads {
-            threads.push(thread_repo.materialize(db_thread).await?);
+            threads.push(thread_repo.materialize(db_thread, Some(3)).await?);
         }
         Ok(PaginatedResponse {
             items: threads,
