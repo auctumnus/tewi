@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}500 - tewi{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/error.css" />
+{% endblock %}
+
+{% block content_hat %}
+{% endblock %}
+
+{% block content %}
+  <main class="error-page">
+    <div class="error-box">
+      {% if let Some(message) = message %}
+        <h2>{message}</h2>
+      {% else %}
+        <h2>Misfortune</h2>
+      {% endif %}
+      <img src="/assets/sad-face.png" alt="500" />
+      {% if let Some(info) = info %}
+        <p>{info}</p>
+      {% else %}
+        <p>An unknown error occurred</p>
+      {% endif %}
+    </div>
+  </main>
+{% endblock %}

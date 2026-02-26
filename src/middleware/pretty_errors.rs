@@ -38,6 +38,15 @@ pub async fn pretty_error_codes(request: Request, next: Next) -> Response {
 
             return (StatusCode::INTERNAL_SERVER_ERROR, Html(html)).into_response();
         }
-        _ => return response,
+        _ => {
+            let html = (view_structs::status::error::error_page::ErrorPageTemplate {
+                message: None,
+                info: None,
+            })
+            .render()
+            .expect("Cant render the error template so just explode");
+
+            return (StatusCode::FORBIDDEN, Html(html)).into_response();
+        }
     };
 }
