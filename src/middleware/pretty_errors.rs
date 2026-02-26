@@ -11,6 +11,10 @@ use crate::view_structs;
 pub async fn pretty_error_codes(request: Request, next: Next) -> Response {
     let response = next.run(request).await;
 
+    if response.status().is_success() {
+        return response;
+    }
+
     match response.status() {
         StatusCode::NOT_FOUND => {
             let html =
@@ -46,7 +50,7 @@ pub async fn pretty_error_codes(request: Request, next: Next) -> Response {
             .render()
             .expect("Cant render the error template so just explode");
 
-            return (StatusCode::FORBIDDEN, Html(html)).into_response();
+            return (response.status(), Html(html)).into_response();
         }
     };
 }
