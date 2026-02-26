@@ -43,13 +43,9 @@ pub async fn login(
         .create(&payload.username.as_str(), &payload.password.as_str())
         .await
     {
-        return Ok((
-            jar.add(Cookie::new(
-                extract_session::SESSION_COOKIE_NAME,
-                session.token,
-            )),
-            Redirect::to("/admin/boards"),
-        ));
+        let mut cookie = Cookie::new(extract_session::SESSION_COOKIE_NAME, session.token);
+        cookie.set_path("/");
+        return Ok((jar.add(cookie), Redirect::to("/admin/boards")));
     }
 
     Err(StatusCode::UNAUTHORIZED)
