@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "types": ["node"],
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleDetection": "force",
+    "allowJs": true,
+
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "emitDeclarationOnly": true,
+
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "files": ["build.ts"]
+}

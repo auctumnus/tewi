@@ -1,37 +1,33 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}tewi{% endblock %}</title>
+    <link rel="stylesheet" href="/static/inter.css" />
+    <link rel="stylesheet" href="/static/main.css" />
+    <link rel="stylesheet" href="/static/admin.css" />
+    <script type="module" src="/static/script.js"></script>
+    {% block head %}{% endblock %}
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}tewi{% endblock %}</title>
-  <link rel="stylesheet" href="/static/inter.css" />
-  <link rel="stylesheet" href="/static/main.css" />
-  <link rel="stylesheet" href="/static/admin.css" />
-  <script src="/static/home.js"></script>
-  {% block head %}{% endblock %}
-</head>
-
-<body>
-  <div class="header">
-    <nav>
-    </nav>
-    <div class="container">
-      <div class="site-branding-container">
-        <div class="site-branding">
-          <a href="/" class="site-logo-main">
-            <h1 aria-hidden="true">^-^</h1>
-          </a>
-          <a href="/" class="site-logo-text">
-            <span id="header-ascii-label">tewi</span>
-          </a>
+  <body>
+    <div class="header">
+      <nav></nav>
+      <div class="container">
+        <div class="site-branding-container">
+          <div class="site-branding">
+            <a href="/" class="site-logo-main">
+              <h1 aria-hidden="true">^-^</h1>
+            </a>
+            <a href="/" class="site-logo-text">
+              <span id="header-ascii-label">tewi</span>
+            </a>
+          </div>
         </div>
-      </div>
-      <div class="content-hat">
-        {% block content_hat %}{% endblock %}
+        <div class="content-hat">{% block content_hat %}{% endblock %}</div>
       </div>
     </div>
-  </div>
 
   <div class="admin-container">
     <div class="admin-nav">
