@@ -17,10 +17,6 @@ main.thread-page {
   padding: var(--spacing-normal) var(--spacing-normal);
   border: 2px dashed var(--gray);
 }
-.thread-content .post-body {
-  max-height: 21cap;
-  overflow-y: hidden;
-}
 
 .admin-thread-options {
   display: flex;

@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="/static/main.css" />
     <link rel="stylesheet" href="/static/admin.css" />
     <script type="module" src="/static/script.js"></script>
+    <noscript>
+      <style>
+        .jsonly {
+          display: none;
+        }
+      </style>
+    </noscript>
     {% block head %}{% endblock %}
   </head>
 
@@ -29,32 +36,30 @@
       </div>
     </div>
 
-  <div class="admin-container">
-    <div class="admin-nav">
-      <ul>
-        <li class="admin-nav-item">
-          <a href="/admin/categories">Board Categories</a>
-        </li>
-        <li class="admin-nav-item">
-          <a href="/admin/boards">Boards</a>
-        </li>
-        <li class="admin-nav-item">
-          <a href="/admin/bans">Bans</a>
-        </li>
-        <li class="admin-nav-item">
-          <a href="/admin/attachment-policies">Attachment Policies</a>
-        </li>
-      </ul>
+    <div class="admin-container">
+      <div class="admin-nav">
+        <ul>
+          <li class="admin-nav-item">
+            <a href="/admin/categories">Board Categories</a>
+          </li>
+          <li class="admin-nav-item">
+            <a href="/admin/boards">Boards</a>
+          </li>
+          <li class="admin-nav-item">
+            <a href="/admin/bans">Bans</a>
+          </li>
+          <li class="admin-nav-item">
+            <a href="/admin/attachment-policies">Attachment Policies</a>
+          </li>
+        </ul>
+      </div>
+      <div class="admin-content">
+        {% block content %}
+        {% endblock %}
+      </div>
     </div>
-    <div class="admin-content">
-      {% block content %}
 
-      {% endblock %}
-    </div>
-  </div>
-
-  <!-- load last scripts -->
-  {% block scripts %}{% endblock %}
-</body>
-
+    <!-- load last scripts -->
+    {% block scripts %}{% endblock %}
+  </body>
 </html>

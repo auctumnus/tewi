@@ -1,0 +1,13 @@
+<div class="jsonly">
+  <div id="{{ block_id }}"></div>
+  <script type="module">
+    let editor = document.createElement('strudel-repl');
+    editor.setAttribute('code', atob('{{ encoded_content }}'));
+    document.getElementById('{{ block_id }}').append(editor);
+  </script>
+</div>
+<noscript>
+  <pre>
+    {{ no_script_content }}
+  </pre>
+</noscript>

@@ -162,3 +162,12 @@ a:hover,
   padding: 0;
   font-weight: unset;
 }
+
+html .shiki * {
+  color: var(--shiki-foreground);
+  background-color: var(--shiki-background);
+}
+
+.shiki {
+  padding: var(--spacing-large) var(--spacing-extra-large);
+}

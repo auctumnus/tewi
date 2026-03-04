@@ -3178,6 +3178,7 @@ dependencies = [
  "axum",
  "axum-client-ip",
  "axum-extra",
+ "base64",
  "chrono",
  "clap",
  "image",

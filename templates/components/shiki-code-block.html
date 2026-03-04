@@ -1,0 +1,15 @@
+<div class="jsonly">
+  <div id="{{ block_id }}"></div>
+  <script type="module">
+    const foo = document.getElementById('{{ block_id }}');
+    foo.innerHTML = await shiki.codeToHtml(atob('{{ encoded_content }}'), {
+      lang: atob('{{ language }}'),
+      theme: 'rose-pine',
+    });
+  </script>
+</div>
+<noscript>
+  <pre>
+    {{ no_script_content }}
+  </pre>
+</noscript>

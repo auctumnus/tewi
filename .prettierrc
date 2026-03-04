@@ -5,6 +5,7 @@
   "plugins": ["prettier-plugin-alpine", "prettier-plugin-jinja-template"],
   "printWidth": 80,
   "htmlWhitespaceSensitivity": "css",
+  "singleQuote": true,
   "overrides": [
     {
       "files": ["*.html"],

@@ -6,7 +6,7 @@ import globals from 'globals';
 export default [
   js.configs.recommended,
   {
-    files: ['**/*.{ts,js}'],
+    files: ['src/*.{ts,js}'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -15,7 +15,7 @@ export default [
       },
       globals: {
         ...globals.browser,
-      }
+      },
     },
     plugins: {
       '@typescript-eslint': tseslint,

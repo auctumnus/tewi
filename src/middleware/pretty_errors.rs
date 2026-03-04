@@ -50,7 +50,8 @@ pub async fn pretty_error_codes(request: Request, next: Next) -> Response {
             .render()
             .expect("Cant render the error template so just explode");
 
-            return (response.status(), Html(html)).into_response();
+            //return (response.status(), Html(html)).into_response();
+            return response;
         }
     };
 }

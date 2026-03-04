@@ -66,4 +66,12 @@ db-reset:
     docker compose down postgres -v
     just db
 
-
+# Reset database, add example boards, create admin account
+init-dev:
+    just db-reset
+    just build
+    target/debug/tewi admin new --name admin --password password
+    target/debug/tewi category new --name Interests
+    target/debug/tewi board new --name Technology --slug g --description Technology --category Interests
+    target/debug/tewi board new --name Outdoors --slug out --description Outdoors --category Interests
+    target/debug/tewi board new --name Miscellaneous --slug misc --description "Miscellaneous posts"

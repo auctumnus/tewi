@@ -4,9 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}tewi{% endblock %}</title>
+    <script src="https://unpkg.com/@strudel/embed@latest"></script>
     <link rel="stylesheet" href="/static/inter.css" />
     <link rel="stylesheet" href="/static/main.css" />
     <script type="module" src="/static/script.js"></script>
+    <noscript>
+      <style>
+        .jsonly {
+          display: none;
+        }
+      </style>
+    </noscript>
     {% block head %}{% endblock %}
   </head>
 

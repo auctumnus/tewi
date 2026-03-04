@@ -12,6 +12,11 @@
   flex: 1;
 }
 
+.thread-preview .thread-content .post-body {
+  max-height: 21cap;
+  overflow-y: hidden;
+}
+
 .thread-preview hr {
   margin-top: var(--spacing-2xl);
   width: 100%;

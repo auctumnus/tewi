@@ -44,3 +44,5 @@ postgres_data
 
 # Runtime artifacts
 uploads/
+
+seed/
