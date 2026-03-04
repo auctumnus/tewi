@@ -2,7 +2,7 @@
 {% import "components/delete-form.html" as delete_form %}
 {% import "components/post-image.html" as post_image %}
 {% import "components/attachment-removed.html" as attachment_removed %}
-{% macro post(post, board_slug, op_post_number, admin_session, is_op=false) %}
+{% macro post(post, board_slug, op_post_number, admin_session, is_op=false, should_truncate=false) %}
   <div
     class="post"
     x-bind:class="{ 'image-expanded': open }"
@@ -58,6 +58,18 @@
         {{ post.content_rendered | safe }}
       {% endif %}
     </div>
+    {% if should_truncate && post.content_rendered.len() > 1000 %}
+      <div class="post-truncated">
+        <span
+          >Post too long.
+          <a
+            href="/board/{{ board_slug }}/thread/{{ op_post_number }}{% if !is_op %}#{{ post.post_number }}{% endif %}"
+            >Click here</a
+          >
+          to view the full text.</span
+        >
+      </div>
+    {% endif %}
     {% if post.associated_ban_id.is_some() %}
       <div class="post-banned">[ USER BANNED FOR THIS POST]</div>
     {% endif %}

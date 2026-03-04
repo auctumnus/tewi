@@ -21,8 +21,6 @@ use crate::{
     extract_session::AdminSession,
     models::{
         admins::Admin,
-        attachments::{attachment_path, thumbnail_path},
-        board_categories::{BoardCategory, BoardCategoryRepository},
         boards::{BoardByCategory, BoardRepository, CreateBoard},
     },
 };

@@ -4,6 +4,20 @@ main.thread-page {
   align-items: center;
 }
 
+.thread-content .post-truncated {
+  grid-column-start: 2;
+}
+
+.thread-content .replies-truncated {
+  margin-bottom: var(--spacing-large);
+}
+.thread-content .replies-truncated > span {
+  font-size: var(--font-size-caption);
+}
+.thread-content .replies-truncated > span > a {
+  font-size: var(--font-size-caption);
+}
+
 .thread-content {
   display: flex;
   flex-direction: column;

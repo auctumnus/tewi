@@ -31,6 +31,8 @@ pub struct Thread {
     pub replies: Vec<Post>, // latest n replies
     pub hidden_at: Option<DateTime<Utc>>,
     pub closed_at: Option<DateTime<Utc>>,
+    pub reply_count: usize,
+    pub reply_attachment_count: usize,
 }
 
 pub struct AddOpTemplate {
@@ -130,41 +132,18 @@ impl ThreadRepository {
         .map_err(Into::into)
     }
 
-    pub async fn posts_for_thread(
-        &self,
-        thread_id: Uuid,
-        limit: Option<i64>,
-    ) -> AppResult<Vec<Post>> {
-        let db_posts = match limit {
-            Some(limit) => {
-                sqlx::query_as!(
-                    DBPost,
-                    r#"SELECT
-                        *
-                    FROM posts
-                    WHERE thread_id = $1
-                    ORDER BY post_number ASC
-                    LIMIT $2 "#,
-                    thread_id,
-                    limit,
-                )
-                .fetch_all(&self.0.db)
-                .await?
-            }
-            None => {
-                sqlx::query_as!(
-                    DBPost,
-                    r#"SELECT
+    pub async fn posts_for_thread(&self, thread_id: Uuid) -> AppResult<Vec<Post>> {
+        let db_posts = sqlx::query_as!(
+            DBPost,
+            r#"SELECT
                         *
                     FROM posts
                     WHERE thread_id = $1
                     ORDER BY post_number ASC "#,
-                    thread_id,
-                )
-                .fetch_all(&self.0.db)
-                .await?
-            }
-        };
+            thread_id,
+        )
+        .fetch_all(&self.0.db)
+        .await?;
 
         let post_repo = PostRepository::new(&self.0);
         let mut posts = Vec::with_capacity(db_posts.len());
@@ -187,10 +166,10 @@ impl ThreadRepository {
             None
         };
 
-        println!("Materializing thread {}", db_thread.id); // --- IGNORE ---
+        //println!("Materializing thread {}", db_thread.id); // --- IGNORE ---
 
         let replies: Vec<Post> = self
-            .posts_for_thread(db_thread.id, reply_limit)
+            .posts_for_thread(db_thread.id)
             .await?
             .into_iter()
             .filter_map(|reply| {
@@ -215,7 +194,15 @@ impl ThreadRepository {
             hidden_at: db_thread.hidden_at,
             closed_at: db_thread.closed_at,
             op_post,
-            replies,
+            reply_count: replies.iter().count(),
+            reply_attachment_count: replies
+                .iter()
+                .filter(|reply| !reply.attachments.is_empty())
+                .count(),
+            replies: match reply_limit {
+                Some(reply_limit) => replies.into_iter().take(reply_limit as usize).collect(),
+                None => replies,
+            },
         })
     }
 

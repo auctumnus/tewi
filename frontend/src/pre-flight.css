@@ -170,4 +170,6 @@ html .shiki * {
 
 .shiki {
   padding: var(--spacing-large) var(--spacing-extra-large);
+  max-height: 640px;
+  overflow-y: scroll;
 }

@@ -28,10 +28,26 @@
             </div>
           </div>
         {% endif %}
-        {{ post_macro::post(post=op_post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session, is_op=true) }}
+        {{ post_macro::post(post=op_post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session, is_op=true, should_truncate=true) }}
+        {% if thread_info.reply_count > 1 %}
+          <div class="replies-truncated">
+            <span
+              >{{ thread_info.reply_count }}
+              {{ thread_info.reply_count |  pluralize("reply", "replies") }}
+              {% if thread_info.reply_attachment_count > 0 %}
+                , {{ thread_info.reply_attachment_count }}
+                image{{ thread_info.reply_attachment_count | pluralize }}
+              {% endif %}
+              <a href="/board/{{ board_slug }}/thread/{{ op_post.post_number }}"
+                >Click here</a
+              >
+              to view.</span
+            >
+          </div>
+        {% endif %}
         {% for post in thread_info.replies %}
           <div class="post-container">
-            {{ post_macro::post(post=post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session) }}
+            {{ post_macro::post(post=post, board_slug=board_slug, op_post_number=op_post.post_number, admin_session=admin_session, is_op=false, should_truncate=true) }}
           </div>
         {% endfor %}
       {% else %}
