@@ -105,6 +105,14 @@ pub async fn create_thread(
                 ));
             }
 
+            let attachment_limit = board.attachment_policy.attachment_limit;
+
+            if attachments.len() as i64 > attachment_limit {
+                return Err(bad_request(
+                    format!("Too many attachments, limit is {}", attachment_limit).as_str(),
+                ));
+            }
+
             let op_post = post_repo
                 .create(
                     connection_info.ip().into(),

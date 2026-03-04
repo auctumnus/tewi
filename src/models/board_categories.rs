@@ -1,6 +1,13 @@
 use uuid::Uuid;
 
-use crate::{AppState, err::AppResult, models::{admins::Admin, boards::Board}};
+use crate::{
+    AppState,
+    err::AppResult,
+    models::{
+        admins::Admin,
+        boards::{Board, DbBoard},
+    },
+};
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct DBBoardCategory {
@@ -12,7 +19,7 @@ pub struct DBBoardCategory {
 pub struct BoardCategory {
     pub id: Uuid,
     pub name: String,
-    pub boards: Vec<Board>,
+    pub boards: Vec<DbBoard>,
 }
 
 pub struct EditBoardCategory {
@@ -27,7 +34,11 @@ impl BoardCategoryRepository {
     }
 
     pub async fn create(&self, requestor: Admin, name: String) -> AppResult<DBBoardCategory> {
-        tracing::info!("Admin {} is creating a new board category: {}", requestor.name, name);
+        tracing::info!(
+            "Admin {} is creating a new board category: {}",
+            requestor.name,
+            name
+        );
         let category_id = Uuid::new_v4();
         sqlx::query!(
             "INSERT INTO board_categories (id, name) VALUES ($1, $2)",
@@ -50,8 +61,17 @@ impl BoardCategoryRepository {
         Ok(category)
     }
 
-    pub async fn edit(&self, requestor: Admin, category_id: Uuid, edit_category: EditBoardCategory) -> AppResult<DBBoardCategory> {
-        tracing::info!("Admin {} is editing board category {}", requestor.name, category_id);
+    pub async fn edit(
+        &self,
+        requestor: Admin,
+        category_id: Uuid,
+        edit_category: EditBoardCategory,
+    ) -> AppResult<DBBoardCategory> {
+        tracing::info!(
+            "Admin {} is editing board category {}",
+            requestor.name,
+            category_id
+        );
         let current_category = self.find_by_id(category_id).await?;
         let name = edit_category.name.unwrap_or(current_category.name);
         sqlx::query!(
@@ -65,18 +85,23 @@ impl BoardCategoryRepository {
     }
 
     pub async fn delete(&self, requestor: Admin, category_id: Uuid) -> AppResult<()> {
-        tracing::info!("Admin {} is deleting board category {}", requestor.name, category_id);
-        sqlx::query!(
-            "DELETE FROM board_categories WHERE id = $1",
+        tracing::info!(
+            "Admin {} is deleting board category {}",
+            requestor.name,
             category_id
-        )
-        .execute(&self.0.db)
-        .await?;
+        );
+        sqlx::query!("DELETE FROM board_categories WHERE id = $1", category_id)
+            .execute(&self.0.db)
+            .await?;
         Ok(())
     }
 
     pub async fn delete_by_name(&self, requestor: Admin, name: &str) -> AppResult<()> {
-        tracing::info!("Admin {} is deleting board category {}", requestor.name, name);
+        tracing::info!(
+            "Admin {} is deleting board category {}",
+            requestor.name,
+            name
+        );
         sqlx::query!("DELETE FROM board_categories WHERE name = $1", name)
             .execute(&self.0.db)
             .await?;
@@ -96,7 +121,7 @@ impl BoardCategoryRepository {
 
     pub async fn materialize(&self, db_category: DBBoardCategory) -> AppResult<BoardCategory> {
         let boards = sqlx::query_as!(
-            Board,
+            DbBoard,
             "SELECT * FROM boards WHERE category_id = $1 ORDER BY name",
             db_category.id
         )

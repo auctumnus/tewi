@@ -43,12 +43,17 @@ impl FromRequestParts<AppState> for BoardInfo {
             .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Can't parse url"))?;
 
         let board = match path_params.get("slug") {
-            Some(token) => Some(
-                board_repo
+            Some(token) => {
+                let raw_board = board_repo
                     .find_by_slug(&token)
                     .await
-                    .map_err(|_| (StatusCode::NOT_FOUND, "Board not found"))?,
-            ),
+                    .map_err(|_| (StatusCode::NOT_FOUND, "Board not found"))?;
+                let board = board_repo
+                    .materialize(raw_board)
+                    .await
+                    .map_err(|_| (StatusCode::NOT_FOUND, "Board not found"))?;
+                Some(board)
+            }
             None => None,
         };
 

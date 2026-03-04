@@ -1,12 +1,17 @@
 {% macro removed_image() %}
-  <img
-    x-data=""
+  <div
     class="attachment"
-    src="/assets/removed-by-moderator.png"
-    x-bind:width="open ? undefined : width"
-    x-on:click="open = !open"
-  />
-  <a class="filename" href="/assets/removed-by-moderator.png">
-    {{ attachment.original_filename }}
-  </a>
+    x-data="{open, height: 140, width: 160}"
+    x-bind:class="{'expanded': open}"
+  >
+    <img
+      class="attachment-media"
+      src="/assets/removed-by-moderator.png"
+      x-bind:width="open ? undefined : width"
+      x-on:click="open = !open; onExpand('{{ attachment.id }}', open);"
+    />
+    <a class="filename" href="/assets/removed-by-moderator.png">
+      {{ attachment.original_filename }}
+    </a>
+  </div>
 {% endmacro %}

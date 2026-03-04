@@ -118,6 +118,15 @@ pub async fn create_post(
                 });
             }
 
+            let attachment_limit = board.attachment_policy.attachment_limit;
+            dbg!(&attachment_limit);
+
+            if attachments.len() as i64 > attachment_limit {
+                return Err(bad_request(
+                    format!("Too many attachments, limit is {}", attachment_limit).as_str(),
+                ));
+            }
+
             println!(
                 "Creating post in thread {} on board {}",
                 thread.id, board.id

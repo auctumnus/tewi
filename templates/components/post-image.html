@@ -1,13 +1,18 @@
 {% macro post_image(attachment) %}
-  <img
-    x-data="{thumbnail:'{{ crate::util::thumbnail_src(attachment.id) }}',image:'{{ crate::util::attachment_src(attachment.id) }}'}"
+  <div
     class="attachment"
-    src="{{ crate::util::thumbnail_src(attachment.id) }}"
-    x-bind:src="open ? image : thumbnail"
-    x-bind:width="open ? undefined : width"
-    x-on:click="open = !open"
-  />
-  <a class="filename" href="{{ crate::util::attachment_src(attachment.id) }}">
-    {{ attachment.original_filename }}
-  </a>
+    x-data="{height: 140, width: 160, open: false, thumbnail:'{{ crate::util::thumbnail_src(attachment.id) }}',image:'{{ crate::util::attachment_src(attachment.id) }}'}"
+    x-bind:class="{'expanded': open}"
+  >
+    <img
+      class="attachment-media"
+      src="{{ crate::util::thumbnail_src(attachment.id) }}"
+      x-bind:src="open ? image : thumbnail"
+      x-bind:width="open ? undefined : width"
+      x-on:click="open = !open; onExpand('{{ attachment.id }}', open);"
+    />
+    <a class="filename" href="{{ crate::util::attachment_src(attachment.id) }}">
+      {{ attachment.original_filename }}
+    </a>
+  </div>
 {% endmacro %}

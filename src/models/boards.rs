@@ -7,12 +7,22 @@ use crate::{
     err::AppResult,
     models::{
         admins::Admin,
+        attachment_policies::{AttachmentPolicy, AttachmentPolicyRepository, DBAttachmentPolicy},
         board_categories,
         threads::{DBThread, Thread, ThreadRepository},
     },
     pagination::{PaginatedRequest, PaginatedResponse},
 };
 
+#[derive(sqlx::FromRow, Debug, Clone)]
+pub struct DbBoard {
+    pub id: Uuid,
+    pub slug: String,
+    pub name: String,
+    pub description: String,
+    pub category_id: Option<Uuid>,
+    pub next_post_number: i32,
+}
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Board {
     pub id: Uuid,
@@ -21,10 +31,11 @@ pub struct Board {
     pub description: String,
     pub category_id: Option<Uuid>,
     pub next_post_number: i32,
+    pub attachment_policy: DBAttachmentPolicy,
 }
 
 #[derive(Debug)]
-pub struct BoardByCategory(pub Option<String>, pub Vec<Board>);
+pub struct BoardByCategory(pub Option<String>, pub Vec<DbBoard>);
 
 #[derive(sqlx::FromRow, Debug)]
 struct BoardWithCategoryName {
@@ -59,7 +70,7 @@ impl BoardRepository {
         Self(state.clone())
     }
 
-    pub async fn create(&self, requestor: Admin, create_board: CreateBoard) -> AppResult<Board> {
+    pub async fn create(&self, requestor: Admin, create_board: CreateBoard) -> AppResult<DbBoard> {
         tracing::info!(
             "Admin {} is creating a new board: /{}/",
             requestor.name,
@@ -93,7 +104,7 @@ impl BoardRepository {
         requestor: Admin,
         board_id: Uuid,
         edit_board: EditBoard,
-    ) -> AppResult<Board> {
+    ) -> AppResult<DbBoard> {
         tracing::info!("Admin {} is editing board {}", requestor.name, board_id);
         let current_board = self.find_by_id(board_id).await?;
         let slug = edit_board.slug.unwrap_or(current_board.slug);
@@ -116,29 +127,29 @@ impl BoardRepository {
         self.find_by_id(board_id).await
     }
 
-    pub async fn find_by_id(&self, board_id: Uuid) -> AppResult<Board> {
-        sqlx::query_as!(Board, "SELECT * FROM boards WHERE id = $1", board_id)
+    pub async fn find_by_id(&self, board_id: Uuid) -> AppResult<DbBoard> {
+        sqlx::query_as!(DbBoard, "SELECT * FROM boards WHERE id = $1", board_id)
             .fetch_one(&self.0.db)
             .await
             .map_err(Into::into)
     }
 
-    pub async fn find_by_slug(&self, slug: &str) -> AppResult<Board> {
-        sqlx::query_as!(Board, "SELECT * FROM boards WHERE slug = $1", slug)
+    pub async fn find_by_slug(&self, slug: &str) -> AppResult<DbBoard> {
+        sqlx::query_as!(DbBoard, "SELECT * FROM boards WHERE slug = $1", slug)
             .fetch_one(&self.0.db)
             .await
             .map_err(Into::into)
     }
 
-    pub async fn list_all(&self) -> AppResult<Vec<Board>> {
-        sqlx::query_as!(Board, "SELECT * FROM boards ORDER BY name")
+    pub async fn list_all(&self) -> AppResult<Vec<DbBoard>> {
+        sqlx::query_as!(DbBoard, "SELECT * FROM boards ORDER BY name")
             .fetch_all(&self.0.db)
             .await
             .map_err(Into::into)
     }
 
     pub async fn list_all_slugs(&self) -> AppResult<Vec<String>> {
-        return sqlx::query_as!(Board, "SELECT * FROM boards ORDER BY name")
+        return sqlx::query_as!(DbBoard, "SELECT * FROM boards ORDER BY name")
             .fetch_all(&self.0.db)
             .await
             .map_err(Into::into)
@@ -158,10 +169,10 @@ impl BoardRepository {
         .await
         .map_err(Into::<sqlx::Error>::into)?;
 
-        let mut groups = HashMap::<Option<String>, Vec<Board>>::new();
+        let mut groups = HashMap::<Option<String>, Vec<DbBoard>>::new();
         for board in boards {
             if let Some(cat) = groups.get_mut(&board.category_name) {
-                cat.push(Board {
+                cat.push(DbBoard {
                     id: board.id,
                     slug: board.slug,
                     name: board.name,
@@ -172,7 +183,7 @@ impl BoardRepository {
             } else {
                 groups.insert(
                     board.category_name,
-                    vec![Board {
+                    vec![DbBoard {
                         id: board.id,
                         slug: board.slug,
                         name: board.name,
@@ -278,6 +289,24 @@ impl BoardRepository {
             offset: pagination.current_offset(),
             limit: pagination.limit,
             has_more: (pagination.current_offset() + pagination.limit) < total,
+        })
+    }
+
+    pub async fn materialize(&self, raw_board: DbBoard) -> AppResult<Board> {
+        let attachment_policy_repo = AttachmentPolicyRepository::new(&self.0);
+        let attachment_policy = attachment_policy_repo
+            .find_by_id(raw_board.id)
+            .await
+            .map(|policy| policy)
+            .unwrap_or(DBAttachmentPolicy::default());
+        Ok(Board {
+            id: raw_board.id,
+            slug: raw_board.slug,
+            name: raw_board.name,
+            description: raw_board.description,
+            category_id: raw_board.category_id,
+            next_post_number: raw_board.next_post_number,
+            attachment_policy,
         })
     }
 }

@@ -1,10 +1,11 @@
+use std::default;
+
 use crate::{
     AppState,
     err::AppResult,
     models::{
         admins::Admin,
-        attachment_policies,
-        boards::{Board, BoardRepository},
+        boards::{BoardRepository, DbBoard},
     },
 };
 use chrono::{DateTime, Utc};
@@ -16,21 +17,42 @@ pub const SUPPORTED_MIME_TYPES: &[&str] = &["image/jpeg", "image/png", "image/gi
     SUPPORTED_MIME_TYPES.contains(&mime_type)
 } */
 
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Debug, Clone)]
 pub struct DBAttachmentPolicy {
     pub id: Uuid,
     pub board_id: Uuid,
     pub mime_types: Vec<String>,
     pub size_limit: i64,
+    pub attachment_limit: i64,
     pub enable_spoilers: bool,
     pub created_at: DateTime<Utc>,
 }
+
+impl Default for DBAttachmentPolicy {
+    fn default() -> Self {
+        DBAttachmentPolicy {
+            id: Uuid::default(),
+            board_id: Uuid::default(),
+            mime_types: SUPPORTED_MIME_TYPES
+                .to_vec()
+                .iter()
+                .map(|mime_type| mime_type.to_string())
+                .collect(),
+            size_limit: 10485760,
+            attachment_limit: 1,
+            enable_spoilers: false,
+            created_at: DateTime::default(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct AttachmentPolicy {
     pub id: Uuid,
-    pub board: Board,
+    pub board: DbBoard,
     pub mime_types: Vec<String>,
     pub size_limit: i64,
+    pub attachment_limit: i64,
     pub enable_spoilers: bool,
     pub created_at: DateTime<Utc>,
 }
@@ -161,7 +183,20 @@ impl AttachmentPolicyRepository {
         )
         .fetch_one(&mut *tx)
         .await?;
-        println!("find_by_id");
+
+        tx.commit().await?;
+
+        Ok(attachment_policy)
+    }
+    pub async fn find_by_board_id(&self, board_id: Uuid) -> AppResult<DBAttachmentPolicy> {
+        let mut tx = self.0.db.begin().await?;
+        let attachment_policy = sqlx::query_as!(
+            DBAttachmentPolicy,
+            "SELECT * FROM attachment_policies WHERE board_id = $1",
+            board_id
+        )
+        .fetch_one(&mut *tx)
+        .await?;
 
         tx.commit().await?;
 
@@ -183,6 +218,7 @@ impl AttachmentPolicyRepository {
             board,
             mime_types: raw_policy.mime_types,
             size_limit: raw_policy.size_limit,
+            attachment_limit: raw_policy.attachment_limit,
             enable_spoilers: raw_policy.enable_spoilers,
             created_at: raw_policy.created_at,
         })

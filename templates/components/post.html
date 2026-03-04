@@ -4,22 +4,42 @@
 {% import "components/attachment-removed.html" as attachment_removed %}
 {% macro post(post, board_slug, op_post_number, admin_session, is_op=false, should_truncate=false) %}
   <div
-    class="post"
-    x-bind:class="{ 'image-expanded': open }"
-    x-data="{height: 140, width: 160, open: false}"
+    {% if post.attachments.len() > 1 %}
+      class="post multiple-attachments"
+    {% else %}
+      class="post"
+    {% endif %}
+    x-data="{attachmentExpanded: {}, onExpand: (id, isExpanded) => {
+      $data.attachmentExpanded[id] = isExpanded;
+    } }"
+    x-bind:class="{ 'attachment-expanded': Object.values(attachmentExpanded).some((elm) => elm === true)}"
     id="{{ post.post_number }}"
   >
-    <div class="attachment-container">
-      {% if let Some(attachment) = post.attachments.get(0) %}
-        {% if attachment.removed_at.is_some() %}
-          {% call attachment_removed::removed_image() %}
-          {% endcall %}
-        {% else %}
-          {% call post_image::post_image(attachment) %}
-          {% endcall %}
+    {% if post.attachments.len() > 1 %}
+      <div class="attachments-container">
+        {% for attachment in post.attachments %}
+          {% if attachment.removed_at.is_some() %}
+            {% call attachment_removed::removed_image() %}
+            {% endcall %}
+          {% else %}
+            {% call post_image::post_image(attachment) %}
+            {% endcall %}
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="attachments-container">
+        {% if let Some(attachment) = post.attachments.get(0) %}
+          {% if attachment.removed_at.is_some() %}
+            {% call attachment_removed::removed_image() %}
+            {% endcall %}
+          {% else %}
+            {% call post_image::post_image(attachment) %}
+            {% endcall %}
+          {% endif %}
         {% endif %}
-      {% endif %}
-    </div>
+      </div>
+    {% endif %}
     <div class="post-header">
       {% if is_op %}
         <div class="op-title">{{ post.title| assigned_or("") }}</div>

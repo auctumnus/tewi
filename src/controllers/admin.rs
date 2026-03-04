@@ -20,7 +20,7 @@ use crate::{
         },
         bans::BanRepository,
         board_categories::{BoardCategoryRepository, EditBoardCategory},
-        boards::{BoardRepository, CreateBoard, EditBoard},
+        boards::{Board, BoardRepository, CreateBoard, EditBoard},
         sessions::SessionRepository,
     },
     view_structs::{self},
@@ -78,10 +78,20 @@ pub async fn boards(
     match admin_session {
         Some(_admin_session) => {
             let board_repo = BoardRepository::new(&s);
-            let boards = board_repo
+            let raw_boards = board_repo
                 .list_all()
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            let mut boards = Vec::<Board>::new();
+            for board in raw_boards {
+                let board = board_repo
+                    .materialize(board)
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                boards.push(board);
+            }
+
             let html = (view_structs::admin::boards::BoardsTemplate {
                 boards,
                 validation: None,
@@ -169,6 +179,10 @@ pub async fn view_board(
             let category_repo = BoardCategoryRepository::new(&s);
 
             if let Ok(board) = board_repo.find_by_id(path).await {
+                let board = board_repo
+                    .materialize(board)
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
                 let categories = category_repo
                     .list_all()
                     .await
@@ -427,9 +441,9 @@ pub async fn attachment_policies(
 
             let mut policies_materialized = Vec::<AttachmentPolicy>::new();
             for policy in policies {
-                let asdf = attachment_policy_repo.materialize(policy).await;
-                match asdf {
-                    Ok(asdf) => policies_materialized.push(asdf),
+                let policy = attachment_policy_repo.materialize(policy).await;
+                match policy {
+                    Ok(policy) => policies_materialized.push(policy),
                     Err(_) => continue,
                 };
             }
