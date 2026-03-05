@@ -1,24 +1,63 @@
-{% extends "layout.html" %}
-{% block title %}tewi - Home{% endblock %}
-{% block content %}
-<main class="login">
-  <div class="container-info board-index">
-    {% if let Some(error) = validation %}
-    <div class="login-error">
-      <span class="login-error-text">{{ error.message }}</span>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}tewi - Home{% endblock %}</title>
+    <link rel="stylesheet" href="/static/inter.css" />
+    <link rel="stylesheet" href="/static/main.css" />
+    <link rel="stylesheet" href="/static/admin.css" />
+    <script type="module" src="/static/script.js"></script>
+    <noscript>
+      <style>
+        .jsonly {
+          display: none;
+        }
+      </style>
+    </noscript>
+    {% block head %}{% endblock %}
+  </head>
+
+  <body>
+    <div class="header">
+      <nav></nav>
+      <div class="container">
+        <div class="site-branding-container">
+          <div class="site-branding">
+            <a href="/" class="site-logo-main">
+              <h1 aria-hidden="true">^-^</h1>
+            </a>
+            <a href="/" class="site-logo-text">
+              <span id="header-ascii-label">tewi</span>
+            </a>
+          </div>
+        </div>
+        <div class="content-hat">{% block content_hat %}{% endblock %}</div>
+      </div>
     </div>
-    {% endif %}
-    <form class="login-form" method="post">
-      <div class="input-group horizontal">
-        <label for="username-input">Username</label>
-        <input type="text" id="username-input" name="username" />
+      <div class="admin-content">
+        <main class="login">
+            <form class="styled-form login-form" method="post">
+              {% if let Some(error) = validation %}
+              <div class="login-error">
+                <span class="login-error-text">{{ error.message }}</span>
+              </div>
+              {% endif %}
+              <div class="input-group horizontal">
+                <label for="username-input">Username</label>
+                <input type="text" id="username-input" name="username" />
+              </div>
+              <div class="input-group horizontal">
+                <label for="password-input">Password</label>
+                <input type="password" id="password-input" name="password" />
+              </div>
+              <button type="submit" class="login-button">Login</button>
+            </form>
+        </main>
       </div>
-      <div class="input-group horizontal">
-        <label for="password-input">Password</label>
-        <input type="password" id="password-input" name="password" />
-      </div>
-      <button type="submit" class="login-button">Login</button>
-    </form>
-  </div>
-</main>
-{% endblock %}
+    </div>
+
+    <!-- load last scripts -->
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

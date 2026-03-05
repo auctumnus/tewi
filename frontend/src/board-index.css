@@ -2,6 +2,16 @@ main.home {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--spacing-4xl);
+}
+
+@media (width <= 640px) {
+  main.home {
+    padding: 0 var(--spacing-normal);
+  }
+  main.home .container-narrow {
+    width: auto;
+  }
 }
 
 .board-index {
@@ -18,4 +28,45 @@ main.home {
 
 .board-category span {
   font-size: var(--font-size-sub-title);
+}
+
+.info-box {
+  border: 1px solid var(--gray);
+  padding: var(--spacing-extra-large) var(--spacing-2xl);
+}
+
+.info-box .box-heading {
+  font-size: var(--font-size-sub-title);
+  font-weight: 400;
+}
+
+.info-box .box-subheading {
+  font-size: var(--font-size-large);
+}
+
+.formatting-guide {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--font-size-caption);
+}
+
+.formatting-guide th,
+.formatting-guide td {
+  padding: var(--spacing-small) var(--spacing-normal);
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--gray);
+}
+
+.formatting-guide thead th {
+  font-weight: 600;
+  border-bottom: 1px solid var(--gray);
+}
+
+.formatting-guide .post-body {
+  padding-left: 0;
+}
+
+.formatting-guide pre {
+  margin: 0;
 }

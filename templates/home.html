@@ -52,6 +52,98 @@
             </div>
           {% endfor %}
         </div>
+        <section class="container-narrow info-box">
+          <h2 class="box-heading">Rules</h2>
+          <div>
+            <ol>
+              <li>
+                This site is hosted in the United States of America. Do not post
+                anything that violates the law here
+              </li>
+              <li>Don't spam</li>
+              <li>
+                Violating any of the aforementioned rules will result in your
+                post's removal and possibly a ban from posting at all
+              </li>
+              <li>
+                The moderation team also reserves the right to remove content or
+                ban users based purely on vibes
+              </li>
+            </ol>
+          </div>
+        </section>
+        <section class="container-narrow info-box">
+          <h2 class="box-heading">Help</h2>
+          <div>
+            <hr />
+            <h3 class="box-subheading">Formatting</h3>
+            <table class="formatting-guide">
+              <thead>
+                <tr>
+                  <th>Syntax</th>
+                  <th>Description</th>
+                  <th>Output</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>&gt;text</code></td>
+                  <td>Greentext quote</td>
+                  <td>
+                    <div class="post-body"><blockquote>text</blockquote></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>&gt;&gt;123</code></td>
+                  <td>Link to post #123 on the current board</td>
+                  <td><a href="#">&gt;&gt;123</a></td>
+                </tr>
+                <tr>
+                  <td><code>&gt;&gt;&gt;/board/123</code></td>
+                  <td>Link to post #123 on another board</td>
+                  <td><a href="#">&gt;&gt;&gt;/board/123</a></td>
+                </tr>
+                <tr>
+                  <td><code>&gt;&gt;&gt;/board/</code></td>
+                  <td>Link to a board</td>
+                  <td><a href="#">&gt;&gt;&gt;/board/</a></td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>```<br />code<br />```</code>
+                  </td>
+                  <td>Code block</td>
+                  <td>
+                    <pre><code>code</code></pre>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>```lang<br />code<br />```</code>
+                  </td>
+                  <td>Code block with syntax highlighting</td>
+                  <td>
+                    <pre><code>code</code></pre>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <code>strudel```<br />code<br />```</code>
+                  </td>
+                  <td>Strudel live-coding block</td>
+                  <td>
+                    <pre><code>// strudel player</code></pre>
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>\</code></td>
+                  <td>Escape the next character</td>
+                  <td><code>\&gt;</code> → <span>&gt;</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </main>
     </div>
   </body>
