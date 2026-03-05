@@ -1,4 +1,7 @@
-use axum::{http::StatusCode, response::{IntoResponse, Response}};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 
 use crate::parse_multipart::MultipartParseError;
 
@@ -72,7 +75,9 @@ pub fn internal_error(message: &str) -> AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        (self.status_code, self.message).into_response()
+        let mut resp = (self.status_code.clone(), self.message.clone()).into_response();
+        resp.extensions_mut().insert(self.clone());
+        resp
     }
 }
 

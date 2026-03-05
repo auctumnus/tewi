@@ -6,7 +6,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
 };
 
-use crate::view_structs;
+use crate::{err::AppError, view_structs};
 
 pub async fn pretty_error_codes(request: Request, next: Next) -> Response {
     let response = next.run(request).await;
@@ -43,15 +43,20 @@ pub async fn pretty_error_codes(request: Request, next: Next) -> Response {
             return (StatusCode::INTERNAL_SERVER_ERROR, Html(html)).into_response();
         }
         _ => {
-            let html = (view_structs::status::error::error_page::ErrorPageTemplate {
-                message: None,
-                info: None,
-            })
-            .render()
-            .expect("Cant render the error template so just explode");
+            let thing = response.extensions().get::<AppError>();
+            return match thing {
+                Some(err) => {
+                    let html = (view_structs::status::error::error_page::ErrorPageTemplate {
+                        message: Some(err.message.clone()),
+                        title: None,
+                    })
+                    .render()
+                    .expect("Cant render the error template so just explode");
 
-            //return (response.status(), Html(html)).into_response();
-            return response;
+                    (response.status(), Html(html)).into_response()
+                }
+                _ => response,
+            };
         }
     };
 }

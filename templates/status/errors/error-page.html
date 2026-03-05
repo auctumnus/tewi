@@ -12,14 +12,14 @@
 {% block content %}
   <main class="error-page">
     <div class="error-box">
-      {% if let Some(message) = message %}
-        <h2>{message}</h2>
+      {% if let Some(title) = title %}
+        <h2>{{ title }}</h2>
       {% else %}
         <h2>Misfortune</h2>
       {% endif %}
       <img src="/assets/sad-face.png" alt="500" />
-      {% if let Some(info) = info %}
-        <p>{info}</p>
+      {% if let Some(message) = message %}
+        <p>{{ message }}</p>
       {% else %}
         <p>An unknown error occurred</p>
       {% endif %}
