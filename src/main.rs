@@ -82,7 +82,7 @@ async fn main() -> Result<(), AppError> {
 
     match cli.action.unwrap_or(CliAction::Serve) {
         CliAction::Serve => {
-            let addr = SocketAddr::from(([127, 0, 0, 1], cli.port));
+            let addr = SocketAddr::from(([0, 0, 0, 0], cli.port));
             let app = create_router(state.clone());
 
             tracing::debug!("listening on {}", addr);

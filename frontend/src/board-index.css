@@ -45,28 +45,35 @@ main.home {
 }
 
 .formatting-guide {
-  border-collapse: collapse;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
   font-size: var(--font-size-caption);
 }
 
-.formatting-guide th,
-.formatting-guide td {
+.formatting-guide-header,
+.formatting-guide-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-normal);
   padding: var(--spacing-small) var(--spacing-normal);
-  text-align: left;
-  vertical-align: middle;
   border-bottom: 1px solid var(--gray);
+  align-items: center;
 }
 
-.formatting-guide thead th {
+.formatting-guide-header {
   font-weight: 600;
-  border-bottom: 1px solid var(--gray);
 }
 
-.formatting-guide .post-body {
+.formatting-guide-header > *,
+.formatting-guide-row > * {
+  flex: 1;
+  min-width: 6rem;
+}
+
+.formatting-guide-row .post-body {
   padding-left: 0;
 }
 
-.formatting-guide pre {
+.formatting-guide-row pre {
   margin: 0;
 }
