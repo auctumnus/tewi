@@ -88,3 +88,23 @@ main.thread-page {
 .sticky-button.sticky-active:hover {
   color: var(--orange);
 }
+
+@media (width <= 640px) {
+  .admin-thread-options {
+    flex-wrap: wrap;
+  }
+  .admin-thread-options .admin-thread-status {
+    width: 100%;
+    flex: unset;
+    justify-content: center;
+
+    .thread-hidden-message {
+      flex: 1;
+    }
+  }
+  .admin-thread-options .admin-thread-actions {
+    width: 100%;
+    flex: unset;
+    justify-content: center;
+  }
+}

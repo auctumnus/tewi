@@ -13,7 +13,7 @@
       $data.attachmentExpanded[id] = isExpanded;
     } }"
     x-bind:class="{ 'attachment-expanded': Object.values(attachmentExpanded).some((elm) => elm === true)}"
-    id="{{ post.post_number }}"
+    id="post-{{ post.post_number }}"
   >
     {% if post.attachments.len() > 1 %}
       <div class="attachments-container">
@@ -104,7 +104,7 @@
       {% for backlink in post.backlinks %}
         <a
           class="backlink"
-          href="/board/{{ board_slug }}/thread/{{ op_post_number }}#{{ backlink.post_number }}"
+          href="/board/{{ board_slug }}/thread/{{ op_post_number }}#post-{{ backlink.post_number }}"
         >
           &#8617;{{ backlink.post_number }}
         </a>
