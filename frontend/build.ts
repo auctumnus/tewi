@@ -3,7 +3,7 @@ import type { RspackOptions } from '@rspack/core';
 import { readdir, mkdir, readFile, writeFile, watch } from 'fs/promises';
 import path, { join, dirname, relative, extname, basename } from 'path';
 import { existsSync } from 'fs';
-import { transform } from 'lightningcss';
+import { transform, bundle } from 'lightningcss';
 import { transform as swcTransform } from '@swc/core';
 import { Compiler, rspack, Stats } from '@rspack/core';
 import { TsCheckerRspackPlugin } from 'ts-checker-rspack-plugin';
@@ -20,85 +20,19 @@ async function ensureDir(dir: string) {
   }
 }
 
-async function getAllFiles(
-  dir: string,
-  files: string[] = [],
-): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      await getAllFiles(fullPath, files);
-    } else {
-      files.push(fullPath);
-    }
-  }
-
-  return files;
-}
-
-async function processCSS(inputPath: string, outputPath: string) {
-  const css = await readFile(inputPath, 'utf8');
-  const result = transform({
-    code: Buffer.from(css),
+async function processCSS(
+  inputPath: string,
+  outputPath: string,
+  filename?: string,
+) {
+  let { code } = bundle({
+    filename: join(inputPath, filename ?? 'main.css'),
     minify: true,
     sourceMap: false,
-    filename: basename(inputPath),
+    cssModules: false,
   });
 
-  await writeFile(outputPath, result.code);
-  console.log(
-    `Processed CSS: ${relative(process.cwd(), inputPath)} → ${relative(process.cwd(), outputPath)}`,
-  );
-}
-
-async function processJS(inputPath: string, outputPath: string) {
-  const code = await readFile(inputPath, 'utf8');
-  const result = await swcTransform(code, {
-    filename: inputPath,
-    sourceMaps: true,
-    jsc: {
-      target: 'es2020',
-      parser: {
-        syntax: 'typescript',
-      },
-    },
-    module: {
-      type: 'es6',
-    },
-    minify: true,
-  });
-
-  await writeFile(outputPath, result.code);
-  await writeFile(outputPath + '.map', result.map || '');
-  console.log(
-    `Processed JS: ${relative(process.cwd(), inputPath)} → ${relative(process.cwd(), outputPath)}`,
-  );
-}
-
-async function processFile(filePath: string) {
-  const relativePath = relative(srcDir, filePath);
-  const ext = extname(filePath);
-  const baseName = basename(filePath, ext);
-
-  // Create output directory structure
-  const outputDir = join(distDir, dirname(relativePath));
-  await ensureDir(outputDir);
-
-  try {
-    if (ext === '.css') {
-      const outputPath = join(outputDir, `${baseName}.css`);
-      await processCSS(filePath, outputPath);
-    } else if (ext === '.ts' || ext === '.js') {
-      const outputPath = join(outputDir, `${baseName}.js`);
-      //await processJS(filePath, outputPath);
-    } else {
-      console.log(`Skipping: ${relativePath} (unsupported file type)`);
-    }
-  } catch (err: any) {
-    console.error(`Error processing ${relativePath}:`, err.message);
-  }
+  await writeFile(join(outputPath, filename ?? 'main.css'), code);
 }
 
 async function build() {
@@ -107,12 +41,8 @@ async function build() {
   // Ensure dist directory exists
   await ensureDir(distDir);
 
-  // Get all files in src
-  const files = await getAllFiles(srcDir);
-
-  for (const file of files) {
-    await processFile(file);
-  }
+  await processCSS(srcDir, distDir, 'inter.css');
+  await processCSS(srcDir, distDir);
 
   console.log('Build complete!');
 }
@@ -132,10 +62,17 @@ async function watchFiles() {
       if (event.filename) {
         const filePath = join(srcDir, event.filename);
 
+        const ext = extname(filePath);
+
         // Only process if file exists (not deleted)
-        if (existsSync(filePath)) {
-          console.log(`\nFile changed: ${event.filename}`);
-          await processFile(filePath);
+        if (existsSync(filePath) && ext === '.css') {
+          console.log(`\nCss File changed: ${event.filename}`);
+          if (event.filename === 'inter.css') {
+            console.log(event.filename);
+            await processCSS(srcDir, distDir, event.filename);
+          } else {
+            await processCSS(srcDir, distDir);
+          }
         }
       }
     }

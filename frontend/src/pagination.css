@@ -17,5 +17,5 @@
 }
 
 .page-nav-container .pagination li::marker {
-  content: "";
+  content: '';
 }
