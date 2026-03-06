@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.tailscale
+    container_name: tewi-app
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/tewi
+      RUST_LOG: debug
+      TAILSCALE_AUTHKEY: ${TAILSCALE_AUTHKEY}
+    ports:
+      - "3000:3000"
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped

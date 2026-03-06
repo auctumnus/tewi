@@ -1,10 +1,12 @@
-FROM tewi:latest
+FROM tewi-app:latest
 
 RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
     curl \
     && curl -fsSL https://tailscale.com/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 3000 41641/udp
 
-CMD ["sh", "-c", "tailscaled --state=/var/lib/tailscale/tailscaled.state & sleep 2 && tailscale up --authkey=${TAILSCALE_AUTHKEY} && ./tewi"]
+CMD ["sh", "-c", "tailscaled --state=/var/lib/tailscale/tailscaled.state & sleep 2 && tailscale up --authkey=${TAILSCALE_AUTHKEY} --hostname=tewi && ./tewi"]
