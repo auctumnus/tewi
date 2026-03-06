@@ -1,20 +1,20 @@
 {% extends "admin/layout.html" %}
 {% block title %}tewi - Create Category{% endblock %}
 {% block content %}
-<main class="create-category">
-  <div class="container category-index">
-    {% if let Some(error) = validation %}
-    <div class="create-category-error">
-      <span class="create-category-error-text">{{ error.message }}</span>
+  <main class="create-category">
+    <div class="container category-index">
+      {% if let Some(error) = validation %}
+        <div class="create-category-error">
+          <span class="create-category-error-text">{{ error.message }}</span>
+        </div>
+      {% endif %}
+      <form class="admin-form" id="create-category-form" method="post">
+        <div class="input-group horizontal">
+          <label for="name-input">Name</label>
+          <input type="text" id="name-input" name="name" />
+        </div>
+        <button type="submit" class="create-category-button">Save</button>
+      </form>
     </div>
-    {% endif %}
-    <form class="admin-form" id="create-category-form" method="post">
-      <div class="input-group horizontal">
-        <label for="name-input">Name</label>
-        <input type="text" id="name-input" name="name" />
-      </div>
-      <button type="submit" class="create-category-button">Save</button>
-    </form>
-  </div>
-</main>
+  </main>
 {% endblock %}

@@ -1,29 +1,31 @@
 {% extends "admin/layout.html" %}
 {% block title %}tewi - Categories{% endblock %}
 {% block content %}
-<main class="admin-categories">
-  {% if let Some(error) = validation %}
-  <div class="quick-action-error">
-    <span class="quick-action-error-text">{{ error.message }}</span>
-  </div>
-  {% endif %}
-  <div class="admin-list-header">
-    <a href="/admin/categories/create">New Category</a>
-  </div>
-  <div class="admin-list">
-    {% for category in categories %}
-    <div class="admin-list-item">
-      <div class="admin-list-item-details">
-        <span class="category-name">{{ category.name }}</span>
+  <main class="admin-categories">
+    {% if let Some(error) = validation %}
+      <div class="quick-action-error">
+        <span class="quick-action-error-text">{{ error.message }}</span>
       </div>
-      <div class="admin-list-item-details-actions">
-        <a href="/admin/categories/category/{{ category.id }}/delete">Delete</a>
-        <a href="/admin/categories/category/{{ category.id }}">Edit</a>
-      </div>
+    {% endif %}
+    <div class="admin-list-header">
+      <a href="/admin/categories/create">New Category</a>
     </div>
-    {% else %}
-    <div class="admin-list-empty">No board categories</div>
-    {% endfor %}
-  </div>
-</main>
+    <div class="admin-list">
+      {% for category in categories %}
+        <div class="admin-list-item">
+          <div class="admin-list-item-details">
+            <span class="category-name">{{ category.name }}</span>
+          </div>
+          <div class="admin-list-item-details-actions">
+            <a href="/admin/categories/category/{{ category.id }}/delete"
+              >Delete</a
+            >
+            <a href="/admin/categories/category/{{ category.id }}">Edit</a>
+          </div>
+        </div>
+      {% else %}
+        <div class="admin-list-empty">No board categories</div>
+      {% endfor %}
+    </div>
+  </main>
 {% endblock %}

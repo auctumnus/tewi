@@ -42,16 +42,26 @@
     {% endif %}
     <div class="post-header">
       {% if is_op %}
-        <div class="op-title">{{ post.title| assigned_or("") }}</div>
+        <div class="op-title-container">
+          <span class="op-title">{{ post.title| assigned_or("") }}</span>
+        </div>
       {% endif %}
-      <span class="trip-name">{{ post.name | assigned_or("Anonymous") }}</span>
-      <span class="post-date">{{ post.created_at }}</span>
-      <a
-        class="post-number"
-        href="/board/{{ board_slug }}/thread/{{ op_post_number }}{% if !is_op %}#{{ post.post_number }}{% endif %}"
-      >
-        ID. {{ post.post_number }}
-      </a>
+      <div class="trip-name-container">
+        <span class="trip-name"
+          >{{ post.name | assigned_or("Anonymous") }}</span
+        >
+      </div>
+      <div class="post-date-container">
+        <span class="post-date">{{ post.created_at }}</span>
+      </div>
+      <div class="post-number-container">
+        <a
+          class="post-number"
+          href="/board/{{ board_slug }}/thread/{{ op_post_number }}{% if !is_op %}#{{ post.post_number }}{% endif %}"
+        >
+          ID. {{ post.post_number }}
+        </a>
+      </div>
       <div class="backlinks">
         {% for backlink in post.backlinks %}
           <a
@@ -90,6 +100,16 @@
         >
       </div>
     {% endif %}
+    <div class="backlinks-mobile">
+      {% for backlink in post.backlinks %}
+        <a
+          class="backlink"
+          href="/board/{{ board_slug }}/thread/{{ op_post_number }}#{{ backlink.post_number }}"
+        >
+          &#8617;{{ backlink.post_number }}
+        </a>
+      {% endfor %}
+    </div>
     {% if post.associated_ban_id.is_some() %}
       <div class="post-banned">[ USER BANNED FOR THIS POST]</div>
     {% endif %}

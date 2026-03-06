@@ -1,30 +1,30 @@
 {% extends "admin/layout.html" %}
 {% block title %}tewi - Home{% endblock %}
 {% block content %}
-<main class="admin-boards">
-  {% if let Some(error) = validation %}
-  <div class="quick-action-error">
-    <span class="quick-action-error-text">{{ error.message }}</span>
-  </div>
-  {% endif %}
-  <div class="admin-list-header">
-    <a href="/admin/boards/create">New Board</a>
-  </div>
-  <div class="admin-list">
-    {% for board in boards %}
-    <div class="admin-list-item">
-      <div class="admin-list-item-details">
-        <span class="board-name">{{ board.name }}</span>
-        <span class="board-slug">/{{ board.slug }}/</span>
+  <main class="admin-boards">
+    {% if let Some(error) = validation %}
+      <div class="quick-action-error">
+        <span class="quick-action-error-text">{{ error.message }}</span>
       </div>
-      <div class="admin-list-item-details-actions">
-        <a href="/admin/boards/board/{{ board.id }}/delete">Delete</a>
-        <a href="/admin/boards/board/{{ board.id }}">Edit</a>
-      </div>
+    {% endif %}
+    <div class="admin-list-header">
+      <a href="/admin/boards/create">New Board</a>
     </div>
-    {% else %}
-    <div class="admin-list-empty">No boards</div>
-    {% endfor %}
-  </div>
-</main>
+    <div class="admin-list">
+      {% for board in boards %}
+        <div class="admin-list-item">
+          <div class="admin-list-item-details">
+            <span class="board-name">{{ board.name }}</span>
+            <span class="board-slug">/{{ board.slug }}/</span>
+          </div>
+          <div class="admin-list-item-details-actions">
+            <a href="/admin/boards/board/{{ board.id }}/delete">Delete</a>
+            <a href="/admin/boards/board/{{ board.id }}">Edit</a>
+          </div>
+        </div>
+      {% else %}
+        <div class="admin-list-empty">No boards</div>
+      {% endfor %}
+    </div>
+  </main>
 {% endblock %}

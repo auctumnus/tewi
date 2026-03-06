@@ -1,33 +1,35 @@
 {% extends "admin/layout.html" %}
 {% block title %}tewi - Home{% endblock %}
 {% block content %}
-<main class="create-board">
-  <div class="container board-index">
-    {% if let Some(error) = validation %}
-    <div class="create-board-error">
-      <span class="create-board-error-text">{{ error.message }}</span>
+  <main class="create-board">
+    <div class="container board-index">
+      {% if let Some(error) = validation %}
+        <div class="create-board-error">
+          <span class="create-board-error-text">{{ error.message }}</span>
+        </div>
+      {% endif %}
+      <form class="admin-form" id="create-board-form" method="post">
+        <div class="input-group horizontal">
+          <label for="username-input">Name</label>
+          <input type="text" id="name-input" name="name" />
+        </div>
+        <div class="input-group horizontal">
+          <label for="slug-input">Slug</label>
+          <input type="text" id="slug-input" name="slug" />
+        </div>
+        <div class="input-group horizontal">
+          <label for="category_id-input">Category</label>
+          <select id="category_id-input" name="category_id">
+            <option disabled selected value>None</option>
+            {% for category in categories %}
+              <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="create-board-button admin-form-submit">
+          Save
+        </button>
+      </form>
     </div>
-    {% endif %}
-    <form class="admin-form" id="create-board-form" method="post">
-      <div class="input-group horizontal">
-        <label for="username-input">Name</label>
-        <input type="text" id="name-input" name="name" />
-      </div>
-      <div class="input-group horizontal">
-        <label for="slug-input">Slug</label>
-        <input type="text" id="slug-input" name="slug" />
-      </div>
-      <div class="input-group horizontal">
-        <label for="category_id-input">Category</label>
-        <select id="category_id-input" name="category_id">
-          <option disabled selected value>None</option>
-          {% for category in categories %}
-          <option value="{{ category.id }}">{{ category.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <button type="submit" class="create-board-button admin-form-submit">Save</button>
-    </form>
-  </div>
-</main>
+  </main>
 {% endblock %}

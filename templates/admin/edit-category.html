@@ -1,23 +1,32 @@
 {% extends "admin/layout.html" %}
 {% block title %}tewi - Edit Category{% endblock %}
 {% block content %}
-<main class="edit-category">
-  <div class="container-info category-index">
-    {% if let Some(error) = validation %}
-    <div class="edit-category-error">
-      <span class="edit-category-error-text">{{ error.message }}</span>
+  <main class="edit-category">
+    <div class="container-info category-index">
+      {% if let Some(error) = validation %}
+        <div class="edit-category-error">
+          <span class="edit-category-error-text">{{ error.message }}</span>
+        </div>
+      {% endif %}
+      {% if let Some(category) = category_info %}
+        <form
+          class="admin-form"
+          id="edit-category-form"
+          method="post"
+          action="/admin/categories/category/{{ category.id }}/edit"
+        >
+          <div class="input-group horizontal">
+            <label for="name-input">Name</label>
+            <input
+              type="text"
+              id="name-input"
+              name="name"
+              value="{{ category.name }}"
+            />
+          </div>
+          <button type="submit" class="edit-category-button">Save</button>
+        </form>
+      {% endif %}
     </div>
-    {% endif %}
-    {% if let Some(category) = category_info %}
-    <form class="admin-form" id="edit-category-form" method="post"
-      action="/admin/categories/category/{{ category.id }}/edit">
-      <div class="input-group horizontal">
-        <label for="name-input">Name</label>
-        <input type="text" id="name-input" name="name" value="{{ category.name }}" />
-      </div>
-      <button type="submit" class="edit-category-button">Save</button>
-    </form>
-    {% endif %}
-  </div>
-</main>
+  </main>
 {% endblock %}

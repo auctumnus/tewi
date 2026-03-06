@@ -1,20 +1,24 @@
 {% extends "admin/layout.html" %}
 {% block title %}tewi - Bans{% endblock %}
 {% block content %}
-<main class="admin-bans">
-  <div class="admin-list">
-    {% for ban in bans %}
-    <div class="admin-list-item">
-      <div class="admin-list-item-details">
-        <span>{{ ban.banned_at.format("%Y-%m-%d %H:%M") }}</span>
-        <span>{{ ban.reason }}</span>
-        <span>{% if let Some(name) = ban.admin_name %}{{ name }}{% else %}—{% endif %}</span>
-        <span>{% if let Some(num) = ban.post_number %}{{ num }}{% else %}—{% endif %}</span>
-      </div>
+  <main class="admin-bans">
+    <div class="admin-list">
+      {% for ban in bans %}
+        <div class="admin-list-item">
+          <div class="admin-list-item-details">
+            <span>{{ ban.banned_at.format("%Y-%m-%d %H:%M") }}</span>
+            <span>{{ ban.reason }}</span>
+            <span
+              >{% if let Some(name) = ban.admin_name %}{{ name }}{% else %}—{% endif %}</span
+            >
+            <span
+              >{% if let Some(num) = ban.post_number %}{{ num }}{% else %}—{% endif %}</span
+            >
+          </div>
+        </div>
+      {% else %}
+        <div class="admin-list-empty">No ban history</div>
+      {% endfor %}
     </div>
-    {% else %}
-    <div class="admin-list-empty">No ban history</div>
-    {% endfor %}
-  </div>
-</main>
+  </main>
 {% endblock %}
