@@ -17,7 +17,7 @@ pub struct CreateAttachmentPolicyTemplate {
 pub struct AttachmentPoliciesForm {
     pub board: Uuid,
     pub enable_spoilers: bool,
-    pub size_limit: i64,
+    pub size_limit: Option<i64>,
     pub attachment_limit: i64,
     #[serde(default)]
     pub mime_types: Vec<String>,

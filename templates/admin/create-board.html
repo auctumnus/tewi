@@ -20,7 +20,7 @@
       <div class="input-group horizontal">
         <label for="category_id-input">Category</label>
         <select id="category_id-input" name="category_id">
-          <option>None</option>
+          <option disabled selected value>None</option>
           {% for category in categories %}
           <option value="{{ category.id }}">{{ category.name }}</option>
           {% endfor %}

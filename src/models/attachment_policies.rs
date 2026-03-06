@@ -61,12 +61,14 @@ pub struct CreateAttachmentPolicy {
     pub board_id: Uuid,
     pub mime_types: Vec<String>,
     pub size_limit: i64,
+    pub attachment_limit: Option<i64>,
     pub enable_spoilers: bool,
 }
 pub struct EditAttachmentPolicy {
     pub board_id: Option<Uuid>,
     pub mime_types: Option<Vec<String>>,
     pub size_limit: Option<i64>,
+    pub attachment_limit: Option<i64>,
     pub enable_spoilers: Option<bool>,
 }
 
@@ -90,10 +92,11 @@ impl AttachmentPolicyRepository {
         let mut tx = self.0.db.begin().await?;
 
         let id = sqlx::query_scalar!(
-            "INSERT INTO attachment_policies (board_id, mime_types, size_limit, enable_spoilers) VALUES ($1, $2, $3, $4) RETURNING id",
+            "INSERT INTO attachment_policies (board_id, mime_types, size_limit, attachment_limit, enable_spoilers) VALUES ($1, $2, $3, $4, $5) RETURNING id",
             create_attachment_policy.board_id,
             &create_attachment_policy.mime_types,
             create_attachment_policy.size_limit as i32,
+            create_attachment_policy.attachment_limit.unwrap_or(DBAttachmentPolicy::default().attachment_limit) as i32,
             create_attachment_policy.enable_spoilers,
         )
         .fetch_one(&mut *tx)
@@ -121,6 +124,9 @@ impl AttachmentPolicyRepository {
         let size_limit = edit_attachment_policy
             .size_limit
             .unwrap_or(current_attachment_policy.size_limit);
+        let attachment_limit = edit_attachment_policy
+            .attachment_limit
+            .unwrap_or(current_attachment_policy.attachment_limit);
         let enable_spoilers = edit_attachment_policy
             .enable_spoilers
             .unwrap_or(current_attachment_policy.enable_spoilers);
@@ -132,8 +138,9 @@ impl AttachmentPolicyRepository {
             None => current_attachment_policy.board_id,
         };
         sqlx::query!(
-            "UPDATE attachment_policies SET size_limit = $1, enable_spoilers = $2, mime_types = $3, board_id = $4 WHERE id = $5",
+            "UPDATE attachment_policies SET size_limit = $1, attachment_limit = $2, enable_spoilers = $3, mime_types = $4, board_id = $5 WHERE id = $6",
             size_limit as i32,
+            attachment_limit as i32,
             enable_spoilers,
             &mime_types,
             board_id,

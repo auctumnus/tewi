@@ -149,7 +149,7 @@ pub async fn create_board(
                 )
                 .await?;
             return Ok(Redirect::to(
-                format!("/admin/boards/board/{}", board.slug).as_str(),
+                format!("/admin/boards/board/{}", board.id).as_str(),
             ));
         }
         None => return Err(unauthorized("Not an admin")),
@@ -434,6 +434,7 @@ pub async fn show_create_attachment_policies(
                         .iter()
                         .map(|mime| mime.to_string())
                         .collect(),
+                    default: DBAttachmentPolicy::default(),
                 })
                 .render()
                 .map_err(|_| internal_error("Template render failed"))?;
@@ -463,6 +464,7 @@ pub async fn create_attachment_policies(
                         mime_types: payload.mime_types,
                         enable_spoilers: payload.enable_spoilers,
                         size_limit: payload.size_limit,
+                        attachment_limit: payload.attachment_limit,
                     },
                 )
                 .await?;
@@ -525,6 +527,7 @@ pub async fn edit_attachment_policies(
                         mime_types: Some(payload.mime_types),
                         enable_spoilers: payload.enable_spoilers.or(Some(false)),
                         size_limit: Some(payload.size_limit),
+                        attachment_limit: Some(payload.attachment_limit),
                     },
                 )
                 .await?;
