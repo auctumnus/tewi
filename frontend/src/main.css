@@ -111,6 +111,7 @@ main.page {
 }
 
 .input-group > input[type='text'],
+.input-group > input[type='number'],
 .input-group > input[type='password'],
 .input-group > input[type='datetime-local'],
 .input-group > textarea {

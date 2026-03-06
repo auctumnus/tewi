@@ -60,9 +60,9 @@ pub struct AttachmentPolicy {
 pub struct CreateAttachmentPolicy {
     pub board_id: Uuid,
     pub mime_types: Vec<String>,
-    pub size_limit: i64,
+    pub size_limit: Option<i64>,
     pub attachment_limit: Option<i64>,
-    pub enable_spoilers: bool,
+    pub enable_spoilers: Option<bool>,
 }
 pub struct EditAttachmentPolicy {
     pub board_id: Option<Uuid>,
@@ -95,9 +95,9 @@ impl AttachmentPolicyRepository {
             "INSERT INTO attachment_policies (board_id, mime_types, size_limit, attachment_limit, enable_spoilers) VALUES ($1, $2, $3, $4, $5) RETURNING id",
             create_attachment_policy.board_id,
             &create_attachment_policy.mime_types,
-            create_attachment_policy.size_limit as i32,
+            create_attachment_policy.size_limit.unwrap_or(DBAttachmentPolicy::default().size_limit) as i32,
             create_attachment_policy.attachment_limit.unwrap_or(DBAttachmentPolicy::default().attachment_limit) as i32,
-            create_attachment_policy.enable_spoilers,
+            create_attachment_policy.enable_spoilers.unwrap_or(DBAttachmentPolicy::default().enable_spoilers),
         )
         .fetch_one(&mut *tx)
         .await?;

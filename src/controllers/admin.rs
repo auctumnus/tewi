@@ -16,7 +16,7 @@ use crate::{
     models::{
         attachment_policies::{
             AttachmentPolicy, AttachmentPolicyRepository, CreateAttachmentPolicy,
-            EditAttachmentPolicy, SUPPORTED_MIME_TYPES,
+            DBAttachmentPolicy, EditAttachmentPolicy, SUPPORTED_MIME_TYPES,
         },
         bans::BanRepository,
         board_categories::{BoardCategoryRepository, EditBoardCategory},
