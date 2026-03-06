@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     curl \
+    git \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -15,6 +16,9 @@ ENV PATH="/root/.bun/bin:${PATH}"
 ENV DATABASE_URL="postgres://user:password@localhost:5432/tewi"
 
 WORKDIR /app
+
+# Copy monorepo files
+COPY ./package.json ./bun.lock ./
 
 # Copy frontend files and build
 COPY frontend/package.json frontend/bun.lock ./frontend/
@@ -30,6 +34,11 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY migrations ./migrations
 COPY templates ./templates
+
+# Copy asset files
+COPY assets ./assets
+
+RUN SQLX_OFFLINE=true cargo build --release
 
 # Build the application
 RUN cargo build --release
@@ -50,6 +59,7 @@ COPY --from=builder /app/target/release/tewi ./
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/templates ./templates
 COPY --from=builder /app/frontend/dist ./frontend/dist
+COPY --from=builder /app/assets ./assets
 
 EXPOSE 3000
 
