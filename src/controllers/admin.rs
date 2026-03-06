@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    err::{AppError, AppResult},
+    err::{AppError, AppResult, internal_error, unauthorized},
     extract_session::{self, AdminSession},
     models::{
         attachment_policies::{
@@ -26,17 +26,17 @@ use crate::{
     view_structs::{self},
 };
 
-pub async fn login_page(State(_s): State<AppState>) -> Result<Html<String>, StatusCode> {
+pub async fn login_page(State(_s): State<AppState>) -> AppResult<Html<String>> {
     let html = (view_structs::admin::login::LoginTemplate { validation: None })
         .render()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| internal_error("Template render failed"))?;
     Ok(Html(html))
 }
 pub async fn login(
     jar: CookieJar,
     State(s): State<AppState>,
     Form(payload): Form<view_structs::admin::login::LoginForm>,
-) -> Result<(CookieJar, Redirect), StatusCode> {
+) -> AppResult<(CookieJar, Redirect)> {
     let sessions_repo = SessionRepository::new(&s);
 
     if let Ok(session) = sessions_repo
@@ -48,47 +48,41 @@ pub async fn login(
         return Ok((jar.add(cookie), Redirect::to("/admin/boards")));
     }
 
-    Err(StatusCode::UNAUTHORIZED)
+    Err(unauthorized("Invalid credentials"))
 }
 
 pub async fn logout(
     State(s): State<AppState>,
     AdminSession(admin): AdminSession,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     let sessions_repo = SessionRepository::new(&s);
     match admin {
         Some(admin) => {
             if let Ok(_session) = sessions_repo.delete_by_token(&admin.0.token).await {
                 let html = (view_structs::admin::login::LoginTemplate { validation: None })
                     .render()
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    .map_err(|_| internal_error("Template render failed"))?;
                 return Ok(Html(html));
             } else {
-                return Err(StatusCode::UNAUTHORIZED);
+                return Err(unauthorized("Not an admin"));
             }
         }
-        None => return Err(StatusCode::UNAUTHORIZED),
+        None => return Err(unauthorized("Not an admin")),
     }
 }
 
 pub async fn boards(
     AdminSession(admin_session): AdminSession,
     State(s): State<AppState>,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_admin_session) => {
             let board_repo = BoardRepository::new(&s);
-            let raw_boards = board_repo
-                .list_all()
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let raw_boards = board_repo.list_all().await?;
 
             let mut boards = Vec::<Board>::new();
             for board in raw_boards {
-                let board = board_repo
-                    .materialize(board)
-                    .await
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                let board = board_repo.materialize(board).await?;
                 boards.push(board);
             }
 
@@ -97,21 +91,18 @@ pub async fn boards(
                 validation: None,
             })
             .render()
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => return Err(StatusCode::UNAUTHORIZED),
+        None => return Err(unauthorized("Not an admin")),
     }
 }
 pub async fn display_create_board(
     State(s): State<AppState>,
     AdminSession(admin_session): AdminSession,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     let category_repo = BoardCategoryRepository::new(&s);
-    let categories = category_repo
-        .list_all()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let categories = category_repo.list_all().await?;
 
     match admin_session {
         Some(_) => {
@@ -120,21 +111,22 @@ pub async fn display_create_board(
                 validation: None,
             })
             .render()
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => return Err(StatusCode::UNAUTHORIZED),
+        None => return Err(unauthorized("Not an admin")),
     }
 }
 pub async fn create_board(
     State(s): State<AppState>,
     AdminSession(admin_session): AdminSession,
     Form(payload): Form<view_structs::admin::create_board::CreateBoardForm>,
-) -> Result<Redirect, StatusCode> {
+) -> AppResult<Redirect> {
     match admin_session {
         Some((_, admin)) => {
             let category_repo = BoardCategoryRepository::new(&s);
             let board_repo = BoardRepository::new(&s);
+            dbg!(&payload);
             let board = board_repo
                 .create(
                     admin,
@@ -145,12 +137,9 @@ pub async fn create_board(
                         category_id: match payload.category_id {
                             Some(category_id) => {
                                 let parsed_uuid = Uuid::from_str(category_id.as_str())
-                                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                                    .map_err(|_| internal_error("Invalid category UUID"))?;
 
-                                let category = category_repo
-                                    .find_by_id(parsed_uuid)
-                                    .await
-                                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                                let category = category_repo.find_by_id(parsed_uuid).await?;
 
                                 Some(category.id)
                             }
@@ -158,13 +147,12 @@ pub async fn create_board(
                         },
                     },
                 )
-                .await
-                .map_err(|_| StatusCode::UNAUTHORIZED)?;
+                .await?;
             return Ok(Redirect::to(
                 format!("/admin/boards/board/{}", board.slug).as_str(),
             ));
         }
-        None => return Err(StatusCode::UNAUTHORIZED),
+        None => return Err(unauthorized("Not an admin")),
     }
 }
 
@@ -172,37 +160,31 @@ pub async fn view_board(
     State(s): State<AppState>,
     Path(path): Path<Uuid>,
     AdminSession(admin_session): AdminSession,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_admin_session) => {
             let board_repo = BoardRepository::new(&s);
             let category_repo = BoardCategoryRepository::new(&s);
 
             if let Ok(board) = board_repo.find_by_id(path).await {
-                let board = board_repo
-                    .materialize(board)
-                    .await
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-                let categories = category_repo
-                    .list_all()
-                    .await
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                let board = board_repo.materialize(board).await?;
+                let categories = category_repo.list_all().await?;
                 let html = (view_structs::admin::edit_board::EditBoardTemplate {
                     validation: None,
                     board: board,
                     categories,
                 })
                 .render()
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .map_err(|_| internal_error("Template render failed"))?;
                 return Ok(Html(html));
             }
             let html =
                 (view_structs::status::error::not_found::NotFoundTemplate { board_name: None })
                     .render()
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => return Err(StatusCode::UNAUTHORIZED),
+        None => return Err(unauthorized("Not an admin")),
     }
 }
 pub async fn update_board(
@@ -210,24 +192,18 @@ pub async fn update_board(
     Path(path): Path<Uuid>,
     AdminSession(admin_session): AdminSession,
     Form(payload): Form<view_structs::admin::edit_board::EditBoardForm>,
-) -> Result<Redirect, StatusCode> {
+) -> AppResult<Redirect> {
     match admin_session {
         Some((_session, admin)) => {
             let board_repo = BoardRepository::new(&s);
             let category_repo = BoardCategoryRepository::new(&s);
 
-            let board = board_repo
-                .find_by_id(path)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let board = board_repo.find_by_id(path).await?;
 
             let parsed_uuid = Uuid::from_str(payload.category_id.as_str())
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .map_err(|_| internal_error("Invalid category UUID"))?;
 
-            let category = category_repo
-                .find_by_id(parsed_uuid)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let category = category_repo.find_by_id(parsed_uuid).await?;
 
             let _ = board_repo
                 .edit(
@@ -244,13 +220,13 @@ pub async fn update_board(
 
             Ok(Redirect::to("/admin/boards"))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 pub async fn delete_board(
     State(_s): State<AppState>,
     AdminSession(admin_session): AdminSession,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_) => {
             let html = (view_structs::admin::boards::BoardsTemplate {
@@ -258,24 +234,21 @@ pub async fn delete_board(
                 validation: None,
             })
             .render()
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 
 pub async fn categories(
     AdminSession(admin_session): AdminSession,
     State(s): State<AppState>,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_admin_session) => {
             let category_repo = BoardCategoryRepository::new(&s);
-            let categories = category_repo
-                .list_all()
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let categories = category_repo.list_all().await?;
             let db_categories: Vec<_> = categories
                 .into_iter()
                 .map(|c| crate::models::board_categories::DBBoardCategory {
@@ -288,26 +261,26 @@ pub async fn categories(
                 validation: None,
             })
             .render()
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 
 pub async fn display_create_category(
     State(_): State<AppState>,
     AdminSession(admin_session): AdminSession,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_) => {
             let html =
                 (view_structs::admin::create_category::CreateCategoryTemplate { validation: None })
                     .render()
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 
@@ -315,19 +288,16 @@ pub async fn create_category(
     State(s): State<AppState>,
     AdminSession(admin_session): AdminSession,
     Form(payload): Form<view_structs::admin::create_category::CreateCategoryForm>,
-) -> Result<Redirect, StatusCode> {
+) -> AppResult<Redirect> {
     match admin_session {
         Some((_, admin)) => {
             let category_repo = BoardCategoryRepository::new(&s);
-            let category = category_repo
-                .create(admin, payload.name)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let category = category_repo.create(admin, payload.name).await?;
             Ok(Redirect::to(
                 format!("/admin/categories/category/{}", category.id).as_str(),
             ))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 
@@ -335,7 +305,7 @@ pub async fn view_category(
     State(s): State<AppState>,
     Path(id): Path<Uuid>,
     AdminSession(admin_session): AdminSession,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_admin_session) => {
             let category_repo = BoardCategoryRepository::new(&s);
@@ -345,12 +315,15 @@ pub async fn view_category(
                     category_info: Some(category),
                 })
                 .render()
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .map_err(|_| internal_error("Template render failed"))?;
                 return Ok(Html(html));
             }
-            Err(StatusCode::NOT_FOUND)
+            Err(AppError {
+                message: "Not found".to_string(),
+                status_code: StatusCode::NOT_FOUND,
+            })
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 
@@ -359,7 +332,7 @@ pub async fn update_category(
     Path(id): Path<Uuid>,
     AdminSession(admin_session): AdminSession,
     Form(payload): Form<view_structs::admin::edit_category::EditCategoryForm>,
-) -> Result<Redirect, StatusCode> {
+) -> AppResult<Redirect> {
     match admin_session {
         Some((_, admin)) => {
             let category_repo = BoardCategoryRepository::new(&s);
@@ -371,11 +344,10 @@ pub async fn update_category(
                         name: Some(payload.name),
                     },
                 )
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .await?;
             Ok(Redirect::to("/admin/categories"))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 
@@ -383,61 +355,49 @@ pub async fn delete_category(
     State(s): State<AppState>,
     Path(id): Path<Uuid>,
     AdminSession(admin_session): AdminSession,
-) -> Result<Redirect, StatusCode> {
+) -> AppResult<Redirect> {
     match admin_session {
         Some((_, admin)) => {
             let category_repo = BoardCategoryRepository::new(&s);
-            category_repo
-                .delete(admin, id)
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            category_repo.delete(admin, id).await?;
             Ok(Redirect::to("/admin/categories"))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 
 pub async fn bans(
     AdminSession(admin_session): AdminSession,
     State(s): State<AppState>,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_) => {
             let ban_repo = BanRepository::new(&s);
-            let raw_bans = ban_repo
-                .list_all()
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let raw_bans = ban_repo.list_all().await?;
 
             let mut bans = Vec::with_capacity(raw_bans.len());
             for ban in raw_bans {
-                let entry = ban_repo
-                    .materialize(ban)
-                    .await
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                let entry = ban_repo.materialize(ban).await?;
                 bans.push(entry);
             }
 
             let html = (view_structs::admin::bans::BansTemplate { bans })
                 .render()
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 
 pub async fn attachment_policies(
     AdminSession(admin_session): AdminSession,
     State(s): State<AppState>,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_) => {
             let attachment_policy_repo = AttachmentPolicyRepository::new(&s);
-            let policies = attachment_policy_repo
-                .list_all()
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let policies = attachment_policy_repo.list_all().await?;
 
             let mut policies_materialized = Vec::<AttachmentPolicy>::new();
             for policy in policies {
@@ -451,23 +411,20 @@ pub async fn attachment_policies(
                 attachment_policies: policies_materialized,
             })
             .render()
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 pub async fn show_create_attachment_policies(
     AdminSession(admin_session): AdminSession,
     State(s): State<AppState>,
-) -> Result<Html<String>, StatusCode> {
+) -> AppResult<Html<String>> {
     match admin_session {
         Some(_) => {
             let board_repository = BoardRepository::new(&s);
-            let boards = board_repository
-                .list_all()
-                .await
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let boards = board_repository.list_all().await?;
 
             let html =
                 (view_structs::admin::create_attachment_policy::CreateAttachmentPolicyTemplate {
@@ -479,10 +436,10 @@ pub async fn show_create_attachment_policies(
                         .collect(),
                 })
                 .render()
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 pub async fn create_attachment_policies(
@@ -512,10 +469,7 @@ pub async fn create_attachment_policies(
 
             Ok(Redirect::to("/admin/attachment-policies"))
         }
-        None => Err(AppError {
-            message: "Not an admin".to_string(),
-            status_code: StatusCode::UNAUTHORIZED,
-        }),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 pub async fn show_edit_attachment_policies(
@@ -543,16 +497,10 @@ pub async fn show_edit_attachment_policies(
                         .collect(),
                 })
                 .render()
-                .map_err(|_| AppError {
-                    message: "Rendering Error".to_string(),
-                    status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                })?;
+                .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
-        None => Err(AppError {
-            message: "Not an admin".to_string(),
-            status_code: StatusCode::UNAUTHORIZED,
-        }),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 pub async fn edit_attachment_policies(
@@ -583,10 +531,7 @@ pub async fn edit_attachment_policies(
 
             Ok(Redirect::to("/admin/attachment-policies"))
         }
-        None => Err(AppError {
-            message: "Not an admin".to_string(),
-            status_code: StatusCode::UNAUTHORIZED,
-        }),
+        None => Err(unauthorized("Not an admin")),
     }
 }
 pub async fn delete_attachment_policies(
@@ -603,9 +548,6 @@ pub async fn delete_attachment_policies(
 
             Ok(Redirect::to("/admin/attachment-policies"))
         }
-        None => Err(AppError {
-            message: "Not an admin".to_string(),
-            status_code: StatusCode::UNAUTHORIZED,
-        }),
+        None => Err(unauthorized("Not an admin")),
     }
 }
