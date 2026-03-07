@@ -1,3 +1,48 @@
+# sqlx prepare stage 
+FROM postgres:18-alpine AS sqlx_prepare
+
+ENV POSTGRES_DB=tewi
+ENV POSTGRES_USER=user
+ENV POSTGRES_PASSWORD=password
+ENV DATABASE_URL="postgres://user:password@localhost:5432/tewi"
+
+
+# Install system dependencies for building
+RUN apk update && apk add \
+    rustup \
+    build-base \
+    pkgconfig \
+    openssl openssl-dev openssl-libs-static \
+    sqlite sqlite-dev
+
+RUN rustup-init -y
+
+ENV PATH="/root/.cargo/bin:$PATH"
+
+WORKDIR /app
+
+# Copy manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Copy source code
+COPY src ./src
+COPY migrations ./migrations
+COPY templates ./templates
+
+RUN cargo install sqlx-cli
+
+RUN mkdir /db-data && chown postgres /db-data
+
+RUN su postgres -c 'initdb -D /db-data'
+RUN su postgres -c 'pg_ctl start -o "-p 5432" -D /db-data && \
+    createuser -p 5432 -h localhost $POSTGRES_USER && \
+    createdb $POSTGRES_DB -p 5432 -h localhost -O $POSTGRES_USER'
+
+RUN su postgres -c 'pg_ctl start -o "-p 5432" -D /db-data' && \
+    sqlx migrate run && \
+    cargo sqlx prepare && \ 
+    su postgres -c 'pg_ctl stop -D /db-data'
+
 # Build stage
 FROM rust:1.88-slim AS builder
 
@@ -37,6 +82,9 @@ COPY templates ./templates
 
 # Copy asset files
 COPY assets ./assets
+
+# Copy sqlx stage artifacts
+COPY --from=sqlx_prepare /app/.sqlx ./.sqlx
 
 RUN SQLX_OFFLINE=true cargo build --release
 
