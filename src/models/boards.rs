@@ -295,7 +295,7 @@ impl BoardRepository {
     pub async fn materialize(&self, raw_board: DbBoard) -> AppResult<Board> {
         let attachment_policy_repo = AttachmentPolicyRepository::new(&self.0);
         let attachment_policy = attachment_policy_repo
-            .find_by_id(raw_board.id)
+            .find_by_board_id(raw_board.id)
             .await
             .map(|policy| policy)
             .unwrap_or(DBAttachmentPolicy::default());
