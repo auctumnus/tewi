@@ -1,10 +1,13 @@
 use crate::{
     AppState, config,
-    err::{AppResult, malformed},
+    err::{AppResult, internal_error, malformed},
     models::admins::Admin,
 };
 use chrono::{DateTime, Utc};
-use image::{GenericImageView, ImageFormat, ImageReader, imageops::FilterType};
+use image::{
+    GenericImageView, ImageDecoder, ImageFormat, ImageReader, imageops::FilterType,
+    metadata::Orientation,
+};
 use std::io::Cursor;
 use uuid::Uuid;
 
@@ -58,6 +61,17 @@ pub fn thumbnail_path(id: &Uuid) -> std::path::PathBuf {
     let id_str = id.to_string();
     let (prefix, _) = id_str.split_at(2);
     config.thumbnails_folder.join(prefix).join(id_str)
+}
+
+fn read_meta_data(attachment_data: &Vec<u8>) -> AppResult<Orientation> {
+    let mut decoder = ImageReader::new(Cursor::new(attachment_data))
+        .with_guessed_format()?
+        .into_decoder()
+        .map_err(|_| internal_error("Image decode failed"))?;
+
+    decoder
+        .orientation()
+        .map_err(|_| internal_error("Can't read orientation"))
 }
 
 impl From<DBAttachment> for Attachment {
@@ -129,18 +143,30 @@ impl AttachmentRepository {
 
         let dimensions = image.dimensions();
 
-        let thumbnail = image.resize(
+        let mut thumbnail = image.resize(
             THUMBNAIL_MAX_WIDTH,
             THUMBNAIL_MAX_HEIGHT,
             FilterType::Gaussian,
         );
+
+        // the image crate doesn't provide much to deal with metadata so just create a
+        // new image with the same dimensions to clear everything
+        let mut image = image.resize(image.width(), image.height(), FilterType::Gaussian);
+
+        if let Ok(orientation) = read_meta_data(&create_attachment.data) {
+            thumbnail.apply_orientation(orientation);
+            image.apply_orientation(orientation);
+        };
+
         let thumbnail_dimensions = thumbnail.dimensions();
+
+        let image_size = image.as_bytes().len().clone();
 
         let id = sqlx::query_scalar!(
             "INSERT INTO attachments (post_id, mime_type, size, width, height, thumbnail_width, thumbnail_height, original_filename, spoilered) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
             create_attachment.post_id,
             create_attachment.mime_type,
-            create_attachment.data.len() as i32,
+            image_size as i32,
             dimensions.0 as i32,
             dimensions.1 as i32,
             thumbnail_dimensions.0 as i32,
@@ -157,14 +183,14 @@ impl AttachmentRepository {
         tokio::fs::create_dir_all(attachment_path.parent().unwrap()).await?;
         tokio::fs::create_dir_all(thumbnail_path.parent().unwrap()).await?;
 
-        tokio::fs::write(&attachment_path, &create_attachment.data).await?;
+        image.save_with_format(&attachment_path, mime_type.unwrap_or(ImageFormat::WebP))?;
         thumbnail.save_with_format(&thumbnail_path, ImageFormat::WebP)?;
 
         Ok(Attachment {
             id,
             post_id: create_attachment.post_id,
             mime_type: create_attachment.mime_type,
-            size: create_attachment.data.len() as u32,
+            size: image_size as u32,
             dimensions: Some(dimensions),
             thumbnail_dimensions: Some(thumbnail_dimensions),
             original_filename: create_attachment.original_filename,
