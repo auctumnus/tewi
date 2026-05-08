@@ -131,6 +131,7 @@ impl MarkupRenderer {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum InlineStyle {
     Bold,
@@ -140,6 +141,7 @@ pub enum InlineStyle {
     Spoiler,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum InlineNode {
     Text(String),
@@ -187,7 +189,7 @@ impl InlineNode {
 }
 
 #[derive(Debug)]
-enum CodeBlock {
+pub enum CodeBlock {
     Shiki(String, Option<String>),
     Strudel(String),
 }
@@ -273,10 +275,12 @@ impl MarkupParser {
         self.input.chars().nth(self.pos + 1)
     }
 
+    #[allow(non_snake_case)] // stay consitent with `peek2()`
     pub fn peekN(&self, n: usize) -> Option<char> {
         self.input.chars().nth(self.pos + n)
     }
 
+    #[allow(dead_code)]
     pub fn rest(&self) -> &str {
         &self.input[self.pos..]
     }
