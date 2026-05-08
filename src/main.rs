@@ -277,6 +277,13 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
             get(controllers::admin::delete_attachment_policies),
         );
 
+    let assetes_router = Router::new()
+        .fallback_service(ServeDir::new("uploads"))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::content_filename::id_to_original_filename,
+        ));
+
     Router::new()
         .layer(Extension(BoardInfo))
         .layer(Extension(AdminSession))
@@ -306,7 +313,7 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
         .nest("/admin", admin_router)
         .nest_service("/static", ServeDir::new("frontend/dist"))
         .nest_service("/assets", ServeDir::new("assets"))
-        .nest_service("/uploads", ServeDir::new("uploads"))
+        .nest("/uploads", assetes_router)
         .layer(DefaultBodyLimit::max(10485760))
         .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
         .layer(axum::middleware::from_fn(

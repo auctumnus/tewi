@@ -224,6 +224,25 @@ impl AttachmentRepository {
             .map_err(Into::into)
     }
 
+    pub async fn find_by_attachment_id(&self, attachment_id: Uuid) -> AppResult<DBAttachment> {
+        let wtf = sqlx::query!("SELECT * FROM attachments WHERE id = $1", attachment_id)
+            .fetch_one(&self.0.db)
+            .await?;
+        Ok(DBAttachment {
+            id: wtf.id,
+            post_id: wtf.post_id,
+            mime_type: wtf.mime_type,
+            size: wtf.size as i64,
+            width: wtf.width.map(|w| w as i64),
+            height: wtf.height.map(|h| h as i64),
+            thumbnail_width: wtf.thumbnail_width.map(|w| w as i64),
+            thumbnail_height: wtf.thumbnail_height.map(|h| h as i64),
+            original_filename: wtf.original_filename,
+            spoilered: wtf.spoilered,
+            removed_at: wtf.removed_at,
+        })
+    }
+
     pub async fn delete(&self, requestor: Admin, attachment_id: Uuid) -> AppResult<()> {
         tracing::info!(
             "Admin {} is deleting attachment {}",
