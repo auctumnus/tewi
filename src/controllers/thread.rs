@@ -73,7 +73,7 @@ pub async fn board_page(
             Ok(Html(html))
         }
         None => {
-            let html = (NotFoundTemplate { board_name: None })
+            let html = (NotFoundTemplate {})
                 .render()
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             Ok(Html(html))

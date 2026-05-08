@@ -178,10 +178,9 @@ pub async fn view_board(
                 .map_err(|_| internal_error("Template render failed"))?;
                 return Ok(Html(html));
             }
-            let html =
-                (view_structs::status::error::not_found::NotFoundTemplate { board_name: None })
-                    .render()
-                    .map_err(|_| internal_error("Template render failed"))?;
+            let html = (view_structs::status::error::not_found::NotFoundTemplate {})
+                .render()
+                .map_err(|_| internal_error("Template render failed"))?;
             Ok(Html(html))
         }
         None => return Err(unauthorized("Not an admin")),

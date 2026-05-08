@@ -325,7 +325,7 @@ fn create_router(state: AppState) -> IntoMakeServiceWithConnectInfo<Router, Sock
 }
 
 async fn fallback_route() -> Result<Html<String>, StatusCode> {
-    let html = (view_structs::status::error::not_found::NotFoundTemplate { board_name: None })
+    let html = (view_structs::status::error::not_found::NotFoundTemplate {})
         .render()
         .map_err(|_| StatusCode::NOT_FOUND)?;
     Ok(Html(html))
