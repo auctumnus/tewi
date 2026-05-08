@@ -1,6 +1,5 @@
 use askama::Template;
 use serde::Deserialize;
-use uuid::Uuid;
 
 use crate::models::{attachment_policies::AttachmentPolicy, boards::DbBoard};
 

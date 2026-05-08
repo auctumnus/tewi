@@ -1,4 +1,4 @@
-use std::{collections::HashMap, iter::Map};
+use std::collections::HashMap;
 
 use uuid::Uuid;
 
@@ -7,8 +7,7 @@ use crate::{
     err::AppResult,
     models::{
         admins::Admin,
-        attachment_policies::{AttachmentPolicy, AttachmentPolicyRepository, DBAttachmentPolicy},
-        board_categories,
+        attachment_policies::{AttachmentPolicyRepository, DBAttachmentPolicy},
         threads::{DBThread, Thread, ThreadRepository},
     },
     pagination::{PaginatedRequest, PaginatedResponse},

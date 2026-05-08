@@ -1,14 +1,12 @@
-use argon2::Block;
 use askama::Template;
 use base64::prelude::*;
-use markdown_it::generics::inline;
 use uuid::Uuid;
 
 use crate::{
     AppState,
     err::AppResult,
     models::{boards::BoardRepository, posts::PostRepository, threads::ThreadRepository},
-    view_structs::{self, components::strudel_code_block},
+    view_structs::{self},
 };
 
 pub struct Render {

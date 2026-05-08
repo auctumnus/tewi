@@ -1,9 +1,6 @@
 use askama::Template;
 
-use crate::{
-    extract_session::AdminSession,
-    models::{admins::Admin, boards::Board, sessions::Session, threads::Thread},
-};
+use crate::models::{admins::Admin, boards::Board, sessions::Session, threads::Thread};
 
 #[derive(Template)]
 #[template(path = "thread.html")]
