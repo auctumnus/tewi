@@ -19,27 +19,19 @@ impl AdminRepository {
     }
 
     pub async fn find_by_id(&self, admin_id: Uuid) -> AppResult<Admin> {
-        sqlx::query_as!(
-            Admin,
-            "SELECT * FROM admins WHERE id = $1",
-            admin_id
-        )
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Admin, "SELECT * FROM admins WHERE id = $1", admin_id)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn find_by_name(&self, name: &str) -> AppResult<Admin> {
-        sqlx::query_as!(
-            Admin,
-            "SELECT * FROM admins WHERE name = $1",
-            name
-        )
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Admin, "SELECT * FROM admins WHERE name = $1", name)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
-    
+
     pub async fn create(&self, name: &str, password: &str) -> AppResult<Admin> {
         let password_hash = hash(password)?;
         let admin = sqlx::query_as!(
@@ -54,12 +46,9 @@ impl AdminRepository {
     }
 
     pub async fn delete_by_name(&self, name: &str) -> AppResult<()> {
-        sqlx::query!(
-            "DELETE FROM admins WHERE name = $1",
-            name
-        )
-        .execute(&self.0.db)
-        .await?;
+        sqlx::query!("DELETE FROM admins WHERE name = $1", name)
+            .execute(&self.0.db)
+            .await?;
         Ok(())
     }
 
@@ -76,12 +65,9 @@ impl AdminRepository {
     }
 
     pub async fn list_all(&self) -> AppResult<Vec<Admin>> {
-        let admins = sqlx::query_as!(
-            Admin,
-            "SELECT * FROM admins ORDER BY created_at DESC"
-        )
-        .fetch_all(&self.0.db)
-        .await?;
+        let admins = sqlx::query_as!(Admin, "SELECT * FROM admins ORDER BY created_at DESC")
+            .fetch_all(&self.0.db)
+            .await?;
         Ok(admins)
     }
 }

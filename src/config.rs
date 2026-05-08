@@ -1,5 +1,5 @@
-use std::{path::PathBuf, sync::LazyLock};
 use clap::{Parser, Subcommand};
+use std::{path::PathBuf, sync::LazyLock};
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum AdminCommand {
@@ -100,6 +100,4 @@ pub struct Cli {
     pub thumbnails_folder: PathBuf,
 }
 
-pub static CONFIG: LazyLock<Cli> = LazyLock::new(|| {
-    Cli::parse()
-});
+pub static CONFIG: LazyLock<Cli> = LazyLock::new(|| Cli::parse());

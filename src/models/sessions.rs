@@ -1,7 +1,12 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
-use crate::{AppState, auth::verify, err::{AppResult, invalid_credentials}, models::admins::AdminRepository};
+use crate::{
+    AppState,
+    auth::verify,
+    err::{AppResult, invalid_credentials},
+    models::admins::AdminRepository,
+};
 
 #[derive(sqlx::FromRow, Debug)]
 pub struct Session {
@@ -20,14 +25,10 @@ impl SessionRepository {
     }
 
     pub async fn find_by_token(&self, token: &str) -> AppResult<Option<Session>> {
-        sqlx::query_as!(
-            Session,
-            "SELECT * FROM sessions WHERE token = $1",
-            token
-        )
-        .fetch_optional(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Session, "SELECT * FROM sessions WHERE token = $1", token)
+            .fetch_optional(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn create(&self, name: &str, password: &str) -> AppResult<Session> {
@@ -54,21 +55,16 @@ impl SessionRepository {
     }
 
     pub async fn delete_by_token(&self, token: &str) -> AppResult<()> {
-        sqlx::query!(
-            "DELETE FROM sessions WHERE token = $1",
-            token
-        )
-        .execute(&self.0.db)
-        .await?;
+        sqlx::query!("DELETE FROM sessions WHERE token = $1", token)
+            .execute(&self.0.db)
+            .await?;
         Ok(())
     }
 
     pub async fn delete_expired(&self) -> AppResult<()> {
-        sqlx::query!(
-            "DELETE FROM sessions WHERE expires_at < NOW()"
-        )
-        .execute(&self.0.db)
-        .await?;
+        sqlx::query!("DELETE FROM sessions WHERE expires_at < NOW()")
+            .execute(&self.0.db)
+            .await?;
         Ok(())
     }
 }

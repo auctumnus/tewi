@@ -3,10 +3,7 @@ use uuid::Uuid;
 use crate::{
     AppState,
     err::AppResult,
-    models::{
-        admins::Admin,
-        boards::{Board, DbBoard},
-    },
+    models::{admins::Admin, boards::DbBoard},
 };
 
 #[derive(sqlx::FromRow, Debug)]

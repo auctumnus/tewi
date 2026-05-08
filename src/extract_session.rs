@@ -5,7 +5,8 @@ use axum::{
 use axum_extra::extract::CookieJar;
 
 use crate::models::{
-    admins::{Admin, AdminRepository}, sessions::{Session, SessionRepository}
+    admins::{Admin, AdminRepository},
+    sessions::{Session, SessionRepository},
 };
 
 use super::AppState;

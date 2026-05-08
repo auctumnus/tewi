@@ -504,7 +504,7 @@ impl MarkupParser {
                     self.pos += STRUDEL_END.len(); // consume the length of strudel end marker
 
                     if self.peek() == Some('\n') {
-                        self.pos += 1; // if the character immediately after the block is \n consume it 
+                        self.pos += 1; // if the character immediately after the block is \n consume it
                     }
 
                     Some(BlockNode::Code(CodeBlock::Strudel(strudel_body)))
@@ -523,7 +523,7 @@ impl MarkupParser {
                     self.pos += header_length;
 
                     if self.peek() == Some('\n') {
-                        self.pos += 1; // if the character immediately after the block is \n consume it 
+                        self.pos += 1; // if the character immediately after the block is \n consume it
                     }
 
                     return Some(BlockNode::Paragraph(vec![InlineNode::Text(text)]));
@@ -552,7 +552,7 @@ impl MarkupParser {
                     self.pos += CODE_BLOCK_END.len(); // consume the length of block end marker
 
                     if self.peek() == Some('\n') {
-                        self.pos += 1; // if the character immediately after the block is \n consume it 
+                        self.pos += 1; // if the character immediately after the block is \n consume it
                     }
 
                     Some(BlockNode::Code(CodeBlock::Shiki(code_body, lang)))
@@ -571,7 +571,7 @@ impl MarkupParser {
                     self.pos += header_length;
 
                     if self.peek() == Some('\n') {
-                        self.pos += 1; // if the character immediately after the block is \n consume it 
+                        self.pos += 1; // if the character immediately after the block is \n consume it
                     }
 
                     return Some(BlockNode::Paragraph(vec![InlineNode::Text(text)]));

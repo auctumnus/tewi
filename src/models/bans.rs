@@ -30,14 +30,10 @@ impl BanRepository {
     }
 
     pub async fn find_by_id(&self, ban_id: Uuid) -> AppResult<Ban> {
-        sqlx::query_as!(
-            Ban,
-            "SELECT * FROM bans WHERE id = $1",
-            ban_id
-        )
-        .fetch_one(&self.0.db)
-        .await
-        .map_err(Into::into)
+        sqlx::query_as!(Ban, "SELECT * FROM bans WHERE id = $1", ban_id)
+            .fetch_one(&self.0.db)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn list_all(&self) -> AppResult<Vec<Ban>> {

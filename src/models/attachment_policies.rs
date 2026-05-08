@@ -1,5 +1,3 @@
-use std::default;
-
 use crate::{
     AppState,
     err::AppResult,
@@ -12,10 +10,6 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 pub const SUPPORTED_MIME_TYPES: &[&str] = &["image/jpeg", "image/png", "image/gif", "image/webp"];
-
-/* pub fn is_supported_mime_type(attachment_policy: &AttachmentPolicy) -> bool {
-    SUPPORTED_MIME_TYPES.contains(&mime_type)
-} */
 
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct DBAttachmentPolicy {
