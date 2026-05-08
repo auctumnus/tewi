@@ -9,6 +9,7 @@ use crate::{
     pagination::{PaginatedRequest, PaginatedResponse},
 };
 
+#[allow(dead_code)]
 #[derive(sqlx::FromRow)]
 pub struct Ip {
     pub id: Uuid,

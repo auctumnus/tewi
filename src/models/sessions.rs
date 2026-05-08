@@ -8,6 +8,7 @@ use crate::{
     models::admins::AdminRepository,
 };
 
+#[allow(dead_code)]
 #[derive(sqlx::FromRow, Debug)]
 pub struct Session {
     pub id: i32,

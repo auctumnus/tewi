@@ -36,6 +36,8 @@ pub struct DBAttachment {
     pub spoilered: bool,
     pub removed_at: Option<DateTime<Utc>>,
 }
+
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Attachment {
     pub id: Uuid,

@@ -20,6 +20,8 @@ pub struct DBThread {
     pub hidden_at: Option<DateTime<Utc>>,
     pub closed_at: Option<DateTime<Utc>>,
 }
+
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Thread {
     pub id: Uuid,

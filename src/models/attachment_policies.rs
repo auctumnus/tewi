@@ -40,6 +40,7 @@ impl Default for DBAttachmentPolicy {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct AttachmentPolicy {
     pub id: Uuid,

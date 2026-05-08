@@ -23,6 +23,8 @@ pub struct DbBoard {
     pub category_id: Option<Uuid>,
     pub next_post_number: i32,
 }
+
+#[allow(dead_code)]
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Board {
     pub id: Uuid,

@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 use crate::{AppState, auth::hash, err::AppResult};
 
+#[allow(dead_code)]
 #[derive(sqlx::FromRow, Debug)]
 pub struct Admin {
     pub id: Uuid,

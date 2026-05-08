@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 use crate::{AppState, err::AppResult};
 
+#[allow(dead_code)]
 #[derive(sqlx::FromRow)]
 pub struct Ban {
     pub id: Uuid,
@@ -13,6 +14,7 @@ pub struct Ban {
     pub expires_at: Option<DateTime<Utc>>,
 }
 
+#[allow(dead_code)]
 #[derive(sqlx::FromRow)]
 pub struct BanListEntry {
     pub id: Uuid,

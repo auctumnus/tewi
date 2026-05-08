@@ -12,6 +12,7 @@ pub struct DBBoardCategory {
     pub name: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct BoardCategory {
     pub id: Uuid,

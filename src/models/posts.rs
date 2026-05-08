@@ -39,6 +39,8 @@ pub struct DBPost {
     pub removed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
 }
+
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Post {
     pub id: Uuid,
