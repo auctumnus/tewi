@@ -24,7 +24,7 @@ pub struct Ref {
     pub to_post_id: Uuid,
 }
 
-#[derive(sqlx::FromRow, Debug)]
+#[derive(sqlx::FromRow, Debug, Clone)]
 pub struct DBPost {
     pub id: Uuid,
     pub thread_id: Uuid,
@@ -41,7 +41,7 @@ pub struct DBPost {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Post {
     pub id: Uuid,
     pub board_slug: String,

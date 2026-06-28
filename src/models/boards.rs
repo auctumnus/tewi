@@ -282,7 +282,7 @@ impl BoardRepository {
         let thread_repo = ThreadRepository::new(&self.0);
         let mut threads = Vec::with_capacity(db_threads.len());
         for db_thread in db_threads {
-            threads.push(thread_repo.materialize(db_thread, Some(2)).await?);
+            threads.push(thread_repo.materialize_preview(db_thread, 2).await?);
         }
         Ok(PaginatedResponse {
             items: threads,

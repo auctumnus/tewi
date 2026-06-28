@@ -153,7 +153,7 @@ pub async fn thread(
                 .map_err(|_| StatusCode::NOT_FOUND)?;
 
             let thread = thread_repo
-                .materialize(thread, None)
+                .materialize(thread)
                 .await
                 .map_err(|_| StatusCode::NOT_FOUND)?;
 
@@ -197,7 +197,7 @@ pub async fn delete_thread(
                 })?;
 
             let thread = threads_repo
-                .materialize(thread, None)
+                .materialize(thread)
                 .await
                 .map_err(|_| AppError {
                     message: "Not a thread".to_string(),

@@ -155,11 +155,7 @@ impl ThreadRepository {
         Ok(posts)
     }
 
-    pub async fn materialize(
-        &self,
-        db_thread: DBThread,
-        reply_limit: Option<i64>,
-    ) -> AppResult<Thread> {
+    pub async fn materialize(&self, db_thread: DBThread) -> AppResult<Thread> {
         let post_repo = PostRepository::new(&self.0);
         let op_post = if let Some(op_post_id) = db_thread.op_post {
             let op_post = post_repo.find_by_id(op_post_id).await?;
@@ -201,10 +197,64 @@ impl ThreadRepository {
                 .iter()
                 .filter(|reply| !reply.attachments.is_empty())
                 .count(),
-            replies: match reply_limit {
-                Some(reply_limit) => replies.into_iter().take(reply_limit as usize).collect(),
-                None => replies,
-            },
+            replies: replies,
+        })
+    }
+    pub async fn materialize_preview(
+        &self,
+        db_thread: DBThread,
+        reply_limit: usize,
+    ) -> AppResult<Thread> {
+        let post_repo = PostRepository::new(&self.0);
+        let op_post = if let Some(op_post_id) = db_thread.op_post {
+            let op_post = post_repo.find_by_id(op_post_id).await?;
+            Some(post_repo.materialize(op_post).await?)
+        } else {
+            None
+        };
+
+        //println!("Materializing thread {}", db_thread.id); // --- IGNORE ---
+
+        let replies: Vec<Post> = self
+            .posts_for_thread(db_thread.id)
+            .await?
+            .into_iter()
+            .filter_map(|reply| {
+                return match &op_post {
+                    Some(op_post) => {
+                        if reply.id != op_post.id {
+                            return Some(reply);
+                        } else {
+                            return None;
+                        }
+                    }
+                    None => None,
+                };
+            })
+            .collect();
+        let reply_count = replies.iter().count();
+        let reply_attachment_count = replies
+            .iter()
+            .filter(|reply| !reply.attachments.is_empty())
+            .count();
+
+        let preview_replies: Vec<Post> = if reply_count > reply_limit {
+            replies.as_slice()[replies.len() - reply_limit..].to_vec()
+        } else {
+            replies
+        };
+        Ok(Thread {
+            id: db_thread.id,
+            board_id: db_thread.board_id,
+            last_post_at: db_thread.last_post_at,
+            created_at: db_thread.created_at,
+            stickied_at: db_thread.stickied_at,
+            hidden_at: db_thread.hidden_at,
+            closed_at: db_thread.closed_at,
+            op_post,
+            reply_count,
+            reply_attachment_count,
+            replies: preview_replies,
         })
     }
 

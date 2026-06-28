@@ -38,7 +38,7 @@ pub struct DBAttachment {
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Attachment {
     pub id: Uuid,
     pub post_id: Uuid,
